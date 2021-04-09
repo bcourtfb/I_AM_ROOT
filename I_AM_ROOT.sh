@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Ensure we are being ran as root
+# Ensure the script is being ran as root or with sudo privileges
 if [ $(id -u) -ne 0 ]; then
 	printf '\e[0;36m%-6s\e[m' "$(tput bold)
 
@@ -73,19 +73,22 @@ printf '\e[0;31m%-6s\e[m' "$(tput bold)
                                                                                
 "
 
-#Function to validate IP address
+#Function to check IP address is in the proper format
 function validateIP(){
     IP_ADDRESS="$1"
-    # Check if the format looks right
+    #Check if the format looks right
     echo "$IP_ADDRESS" | grep -E -qE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' || return 1
-    #check that each octect is less than or equal to 255:
+    #Check that each octect is less than or equal to 255:
     echo "$IP_ADDRESS" | awk -F'.' '$1 <=255 && $2 <= 255 && $3 <=255 && $4 <= 255 {print "Y" } ' | grep -q Y || return 1
     return 0
 }
+
 echo
 sleep 2
+#Ask for user input
 printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter a valid IP: " 
 read IP_ADDRESS
+# While loop to validate the IP provided, if ip is not valid then it will ask for a valid ip
 while ! validateIP "$IP_ADDRESS"
 do
     printf '\e[0;31m%-6s\e[m' "$(tput bold)Invalid IP Format"
@@ -94,7 +97,7 @@ do
     printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter Valid IP: " 
     read IP_ADDRESS
 done
-#Green color
+
 printf '\e[0;32m%-6s\e[m' "$(tput bold)IP is valid"
 echo
 printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter Username: "
@@ -102,6 +105,7 @@ read USERNAME
 printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter Password: " 
 read PASSWD
 echo
+#Script will attempt to connect via ssh with credentials provided by the user
 printf '\e[1;34m%-6s\e[m' "ATTEMPTING TO CONNECT....."
 echo
 echo
