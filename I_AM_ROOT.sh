@@ -117,6 +117,14 @@ printf '\e[1;34m%-6s\e[m' "ATTEMPTING TO CONNECT....."
 echo
 echo
 sleep 3
-sshpass -p "$PASSWD" ssh -o StrictHostKeyChecking=no "$USERNAME"@"$IP_ADDRESS"
-sleep 3
-sshpass -p "$PASSWD" sudo -l ssh -o StrictHostKeyChecking=no "$USERNAME"@"$IP_ADDRESS"
+#Function to login to a server without getting a password prompt.
+    function log_in() {
+        PIPE=$(mktemp -u)
+        mkfifo -m 600 "$PIPE"
+        exec 3<>"$PIPE"
+        rm "$PIPE"
+        echo "$PASSWD" >&3
+        sshpass -d3 ssh "$USERNAME"@"$IP_ADDRESS"
+        exec 3>&-
+    }
+log_in
