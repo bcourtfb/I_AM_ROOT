@@ -43,36 +43,39 @@ echo "
 sleep 1
 printf '\e[0;31m%-6s\e[m' "$(tput bold)                                                                               
       @@@         @@@@@@   @@@@@@@@@@         @@@@@@@    @@@@@@    @@@@@@   @@@@@@@"
-sleep .3
+sleep .2
 printf '\e[0;31m%-6s\e[m' "$(tput bold)  
       @@@        @@@@@@@@  @@@@@@@@@@@        @@@@@@@@  @@@@@@@@  @@@@@@@@  @@@@@@@"
-sleep .3
+sleep .2
 printf '\e[0;31m%-6s\e[m' "$(tput bold)        
       @@!        @@!  @@@  @@! @@! @@!        @@!  @@@  @@!  @@@  @@!  @@@    @@!"
-sleep .3
+sleep .2
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       !@!        !@!  @!@  !@! !@! !@!        !@!  @!@  !@!  @!@  !@!  @!@    !@!"
-sleep .3
+sleep .2
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       !!@        @!@!@!@!  @!! !!@ @!@        @!@!!@!   @!@  !@!  @!@  !@!    @!!"
-sleep .3
+sleep .2
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       !!!        !!!@!!!!  !@!   ! !@!        !!@!@!    !@!  !!!  !@!  !!!    !!!"
-sleep .3
+sleep .2
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       !!:        !!:  !!!  !!:     !!:        !!: :!!   !!:  !!!  !!:  !!!    !!:"
-sleep .3
+sleep .2
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       :!:        :!:  !:!  :!:     :!:        :!:  !:!  :!:  !:!  :!:  !:!    :!:"
-sleep .3
+sleep .2
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
        ::        ::   :::  :::     ::         ::   :::  ::::: ::  ::::: ::     ::"
-sleep .3
+sleep .2
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       :           :   : :   :      :           :   : :   : :  :    : :  :      :     
                                                                                
 "
 
+# printf '\e[0;31m%-6s\e[m' "$(tput bold)Creating Directory at /home/USER/I_AM_ROOT"
+# mkdir /home/$whoami/I_AM_ROOT
+# mkdir /home/$whoami/I_AM_ROOT/$IP_ADDRESS
 #Function to check IP address is in the proper format
 function validateIP(){
     IP_ADDRESS="$1"
@@ -83,21 +86,25 @@ function validateIP(){
     return 0
 }
 
+
 echo
 sleep 2
 #Ask for user input
 printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter a valid IP: " 
 read IP_ADDRESS
+sleep 1
 # While loop to validate the IP provided, if ip is not valid then it will ask for a valid ip
 while ! validateIP "$IP_ADDRESS"
 do
     printf '\e[0;31m%-6s\e[m' "$(tput bold)Invalid IP Format"
-    sleep .3
+    sleep .2
     echo
     printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter Valid IP: " 
     read IP_ADDRESS
 done
-
+# corey
+# oogaboogatooga
+sleep 1
 printf '\e[0;32m%-6s\e[m' "$(tput bold)IP is valid"
 echo
 printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter Username: "
@@ -109,4 +116,7 @@ echo
 printf '\e[1;34m%-6s\e[m' "ATTEMPTING TO CONNECT....."
 echo
 echo
-sshpass -p "$PASSWD" ssh -o StrictHostKeyChecking=no "$USERNAME""@""$IP_ADDRESS"
+sleep 3
+sshpass -p "$PASSWD" ssh -o StrictHostKeyChecking=no "$USERNAME"@"$IP_ADDRESS"
+sleep 3
+sshpass -p "$PASSWD" sudo -l ssh -o StrictHostKeyChecking=no "$USERNAME"@"$IP_ADDRESS"
