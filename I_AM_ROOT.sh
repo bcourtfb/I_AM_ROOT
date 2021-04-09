@@ -91,7 +91,7 @@ echo
 sleep 2
 #Ask for user input
 printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter a valid IP: " 
-read IP_ADDRESS
+read -r IP_ADDRESS
 sleep 1
 # While loop to validate the IP provided, if ip is not valid then it will ask for a valid ip
 while ! validateIP "$IP_ADDRESS"
@@ -100,7 +100,7 @@ do
     sleep .2
     echo
     printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter Valid IP: " 
-    read IP_ADDRESS
+    read -r IP_ADDRESS
 done
 # corey
 # oogaboogatooga
@@ -108,9 +108,9 @@ sleep 1
 printf '\e[0;32m%-6s\e[m' "$(tput bold)IP is valid"
 echo
 printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter Username: "
-read USERNAME
+read -r USERNAME
 printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter Password: " 
-read PASSWD
+read -r PASSWD
 echo
 #Script will attempt to connect via ssh with credentials provided by the user
 printf '\e[1;34m%-6s\e[m' "ATTEMPTING TO CONNECT....."
