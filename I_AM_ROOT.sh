@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ensure the script is being ran as root or with sudo privileges
-if [ $(id -u) -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
 	printf '\e[0;36m%-6s\e[m' "$(tput bold)
 
     ░▀█▀░█░█░▀█▀░█▀▀░░░█▀▀░█▀▀░█▀▄░▀█▀░█▀█░▀█▀░░░█▄█░█░█░█▀▀░▀█▀░░░█▀▄░█▀▀
