@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Ensure the script is being ran as root or with sudo privileges
+
+#Ensure the script is being ran as root or with sudo privileges
 if [ "$(id -u)" -ne 0 ]; then
 	printf '\e[0;36m%-6s\e[m' "$(tput bold)
 
@@ -43,31 +44,31 @@ echo "
 sleep 1
 printf '\e[0;31m%-6s\e[m' "$(tput bold)                                                                               
       @@@         @@@@@@   @@@@@@@@@@         @@@@@@@    @@@@@@    @@@@@@   @@@@@@@"
-sleep .2
+sleep .1
 printf '\e[0;31m%-6s\e[m' "$(tput bold)  
       @@@        @@@@@@@@  @@@@@@@@@@@        @@@@@@@@  @@@@@@@@  @@@@@@@@  @@@@@@@"
-sleep .2
+sleep .1
 printf '\e[0;31m%-6s\e[m' "$(tput bold)        
       @@!        @@!  @@@  @@! @@! @@!        @@!  @@@  @@!  @@@  @@!  @@@    @@!"
-sleep .2
+sleep .1
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       !@!        !@!  @!@  !@! !@! !@!        !@!  @!@  !@!  @!@  !@!  @!@    !@!"
-sleep .2
+sleep .1
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       !!@        @!@!@!@!  @!! !!@ @!@        @!@!!@!   @!@  !@!  @!@  !@!    @!!"
-sleep .2
+sleep .1
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       !!!        !!!@!!!!  !@!   ! !@!        !!@!@!    !@!  !!!  !@!  !!!    !!!"
-sleep .2
+sleep .1
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       !!:        !!:  !!!  !!:     !!:        !!: :!!   !!:  !!!  !!:  !!!    !!:"
-sleep .2
+sleep .1
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       :!:        :!:  !:!  :!:     :!:        :!:  !:!  :!:  !:!  :!:  !:!    :!:"
-sleep .2
+sleep .1
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
        ::        ::   :::  :::     ::         ::   :::  ::::: ::  ::::: ::     ::"
-sleep .2
+sleep .1
 printf '\e[0;31m%-6s\e[m' "$(tput bold)    
       :           :   : :   :      :           :   : :   : :  :    : :  :      :     
                                                                                
@@ -79,14 +80,14 @@ printf '\e[0;31m%-6s\e[m' "$(tput bold)
 #Function to check IP address is in the proper format
 function validateIP(){
     IP_ADDRESS="$1"
-    #Check if the format looks right
+    #Check if the format looks rightsdfasdffghdfghfghfg
     echo "$IP_ADDRESS" | grep -E -qE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' || return 1
     #Check that each octect is less than or equal to 255:
     echo "$IP_ADDRESS" | awk -F'.' '$1 <=255 && $2 <= 255 && $3 <=255 && $4 <= 255 {print "Y" } ' | grep -q Y || return 1
     return 0
 }
 
-
+echo "WELCOME"  "$NAME"
 echo
 sleep 2
 #Ask for user input
@@ -97,7 +98,7 @@ sleep 1
 while ! validateIP "$IP_ADDRESS"
 do
     printf '\e[0;31m%-6s\e[m' "$(tput bold)Invalid IP Format"
-    sleep .2
+    sleep .1
     echo
     printf '\e[0;38m%-6s\e[m' "$(tput bold)Enter Valid IP: " 
     read -r IP_ADDRESS
@@ -117,14 +118,5 @@ printf '\e[1;34m%-6s\e[m' "ATTEMPTING TO CONNECT....."
 echo
 echo
 sleep 3
-#Function to login to a server without getting a password prompt.
-    function log_in() {
-        PIPE=$(mktemp -u)
-        mkfifo -m 600 "$PIPE"
-        exec 3<>"$PIPE"
-        rm "$PIPE"
-        echo "$PASSWD" >&3
-        sshpass -d3 ssh "$USERNAME"@"$IP_ADDRESS"
-        exec 3>&-
-    }
-log_in
+#Expect script to login via ssh and run sudo -l
+expect RECON.exp "$USERNAME" "$IP_ADDRESS" "$PASSWD"
