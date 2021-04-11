@@ -87,7 +87,7 @@ function validateIP(){
     return 0
 }
 
-echo "WELCOME"  "$NAME"
+
 echo
 sleep 2
 #Ask for user input
