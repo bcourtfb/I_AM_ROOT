@@ -8,4 +8,4 @@
 
 # Required dependencies 
 
-1. SSHPASS
+1. Expect
