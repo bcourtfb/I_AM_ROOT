@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------
 # Colors
-# Usage: (echo or echo) "${COLOR}TEXT HERE${NOCOLOR}"
+# Usage: (echo, echo -e, prinf) "${COLOR}TEXT HERE${NOCOLOR}"
 # ------------------------------------------------------
 NOCOLOR='\033[0m'
 RED='\033[0;31m'
