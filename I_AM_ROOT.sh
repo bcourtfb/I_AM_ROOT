@@ -121,12 +121,17 @@ sleep 1
 # While loop to validate the IP provided, if ip is not valid then it will ask for a valid ip
 while ! validateIP "$IP_ADDRESS"
 do
-    echo "${RED}Invalid IP Format"
+    echo "${RED}Invalid IP Format${NOCOLOR}"
     sleep .1
     echo
     echo "${GREEN}Enter a valid IP: ${NOCOLOR}" 
     read -r IP_ADDRESS
 done
+
+printf "${RED}Enter Username: ${NOCOLOR}"
+read -r USERNAME
+printf "${RED}Enter Password: ${NOCOLOR}" 
+read -r PASSWD
 # corey
 # oogaboogatooga
 
@@ -134,11 +139,9 @@ done
 # It will attemp to gather info for possible privilge escalation
 
 DIR=/home/$USERNAME/IAMROOT
-F=Info.txt
-SND=send \"
-P1="printf "${RED}####################""
-P2="####################${NOCOLOR} >>"
-P3="${F}\r\""
+F=info.txt
+
+
 function borrowing_without_permission {
         expect -c "\
         set timeout 300
@@ -146,29 +149,40 @@ function borrowing_without_permission {
         spawn ssh -t "$USERNAME\@$IP_ADDRESS"
         sleep 1
         expect_before \"*(yes/no)?\" {
-        ${SND}yes\r\" 
-        ${SND}$PASSWD\r\"
+        send \"yes\r\" 
+        send \"$PASSWD\r\"
         }
         sleep 2
         expect \"*assword*\"
-        ${SND}$PASSWD\r\"
+        send \"$PASSWD\r\"
         sleep 2
-        ${SND}mkdir ${DIR}\r\"
+        send \"mkdir ${DIR}\r\"
         sleep 2
-        ${SND}touch $DIR/${P3}
+        send \"touch $DIR/${F}\r\"
+        send \"echo '#!/bin/bash' >> $DIR/${F}\r\"
+        send \"echo '' >> $DIR/${F}\r\"
+        send \"echo '' >> $DIR/${F}\r\"
+        send \"echo '' >> $DIR/${F}\r\"
         sleep 2
-        ${SND}${P1}SUDO_COMMANDS${P2}${P3}
+        send \"echo '#################### SUDO COMMANDS ####################' >> $DIR/${F}\r\"
+        send \"echo '' >> $DIR/${F}\r\"
         sleep 2
-        ${SND}sudo -l >> $DIR/$F\\n\r\"
+        send \"sudo -l >> $DIR/${F}\r\"
         sleep 2
         expect \"*assword*\"
-        ${SND}$PASSWD\r\"
+        send \"$PASSWD\r\"
         sleep 2
-        ${SND}${P1}$USERNAME_PATH${P2}
-        ${SND}echo $PATH >> $DIR/$F && echo ""\r\"
-        ${SND}rm file.txt\r\"
-        interact
-        ${SND}exit\r\"
-   "
+        send \"echo '' >> $DIR/${F}\r\"
+        sleep 2
+        send \"echo '#################### $USERNAME PATH ####################' >> $DIR/${F}\r\"
+        sleep 2
+        send \"echo '' >> $DIR/${F}\r\"
+        sleep 2
+        send \"echo $PATH >> $DIR/$F\r\"
+        sleep 2
+        send \"echo '' >> $DIR/${F}\r\"
+        sleep 5
+        send \"exit\r\"
+        "
 }
 borrowing_without_permission
