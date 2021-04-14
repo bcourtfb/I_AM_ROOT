@@ -243,3 +243,22 @@ sleep 5
 
 sshpass -p "$PASSWD" ssh "$USERNAME"@"$IP_ADDRESS" rm -r "$DIR"
 sleep 3
+
+# check for contents in the /ETC/SHADOW section of the file
+grep '/ETC/SHADOW' -A2 I_AM_ROOT/Info.txt | grep 'root'
+#positive result
+if [ $? -eq 0 ]; then
+	printf "
+
+
+	THIS IS YOUR LUCKY DAY!!!
+	THE GOD'S OF ENUMERATION HAVE DEEMED FIT 
+	TO BESTOW THE KEY OF ROOT UPON YOU!!!
+	"
+# negative result
+else
+	printf "
+
+	ENUMERATION DID NOT GRANT YOU A /ETC/SHADOW FILE
+	"
+fi
