@@ -189,7 +189,7 @@ function borrowing_without_permission {
         set env(TERM)
         spawn ssh -t "$USERNAME\@$IP_ADDRESS"
         sleep 1
-        expect_before \"*(yes/no)?\" {
+        expect_before \"*(yes/no*\" {
         send \"yes\r\" 
         send \"$PASSWD\r\"
         }
@@ -229,7 +229,9 @@ function borrowing_without_permission {
         send \"sudo -l >> ${DIR}${F}\r\"
         expect \"*assword*\"
         send \"$PASSWD\r\"
+        sleep 2
         ${SND}
+        sleep 2
         send \"exit\r\"
         "
 }
