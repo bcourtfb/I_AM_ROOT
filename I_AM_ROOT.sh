@@ -41,7 +41,7 @@ fi
 #This command needs to stay in this location
 HOME=$(pwd)
 mkdir $HOME/I_AM_ROOT
-echo -e "${ORANGE}THE DIRECTORIE WAS CREATED IN${NOCOLOR} " "${CYAN}$HOME${NOCOLOR}"
+echo -e "${ORANGE}THE DIRECTORY WAS CREATED IN${NOCOLOR} " "${CYAN}$HOME${NOCOLOR}"
 
 
 
