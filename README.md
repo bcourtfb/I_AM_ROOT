@@ -4,8 +4,8 @@ This script is intended to be used to gather information that could be useful fo
 
 # Required Dependencies 
 
-1. Expect
-    -Expect is a program that "talks" to other interactive programs according to a script.
+1. EXPECT
+    -A program that "talks" to other interactive programs according to a script.
     
 2. SSHPASS
     - A utility designed for running ssh using the mode referred to as "keyboard-in‐teractive" password authentication, but in non-interactive mode.
