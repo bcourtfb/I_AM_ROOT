@@ -51,7 +51,32 @@ fi
 #To create a directory for the script.
 #This command needs to stay in this location
 HOME=$(pwd)
-mkdir $HOME/I_AM_ROOT
+# We check that a working directory exists, if not we create one
+ls I_AM_ROOT 2>/dev/null
+if [ $? -gt 0 ]; then
+    mkdir $HOME/I_AM_ROOT
+fi
+
+#checking for dependencies
+clear
+echo 'CHECKING DEPENDECIES VERSIONS...'
+sleep 3 
+echo 'IF DEPENDENCIES NON_EXISTENT, WILL INSTALL.'
+sleep 4 
+clear
+sshpass -V 2>/dev/null
+if [ $? -gt 0 ]; then
+    sudo apt install sshpass -y
+fi
+pv --v 2>/dev/null
+if [ $? -gt 0 ]; then
+    sudo apt install pv -y
+fi
+expect -v 2>/dev/null
+if [ $? -gt 0 ]; then
+    sudo apt install expect -y
+fi
+
 echo -e "${ORANGE}
 
    ____ ____  _____    _  _____ ___ _   _  ____   ____ ___ ____  _____ ____ _____ ___  ______   __
