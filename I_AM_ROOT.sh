@@ -238,10 +238,10 @@ SND="send \"echo '' >> $DIR${F}\r\""
 # Expect function to gather information via ssh
 function its_only_stealing_if_get_caught {
       expect -c "\
-      set timeout 300
+      set timeout 5 
       set env(TERM)
       spawn ssh -t "$USERNAME\@$IP_ADDRESS"
-      sleep 1
+      sleep 2 
       expect_before \"*(yes/no*\" {
       send \"yes\r\" 
       send \"$PASSWD\r\"
