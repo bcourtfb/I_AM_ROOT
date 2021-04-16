@@ -185,10 +185,11 @@ echo
 printf "${GREEN}ENTER USERNAME: ${NOCOLOR}"
 read -r USERNAME
 echo
-printf "${GREEN}ENTER PASSWORD: ${NOCOLOR}" 
-read -r PASSWD
+printf "${GREEN}ENTER PASSWORD: ${NOCOLOR}"
+# For the time being, we have chosen to use -s (silent mode) with the password input
+read -s PASSWD
 sleep 2
-echo
+echo 
 
 ###################################################################################################################
 #Spin function for show (Need to implement into a process)
