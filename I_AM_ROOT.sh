@@ -393,6 +393,7 @@ sleep 3
 
 # Check for contents in the /ETC/SHADOW section of the file
 
+clear
 grep '/ETC/SHADOW' -A2 "$Info" | grep 'root'
 #positive result
 if [ $? -eq 0 ]; then
@@ -422,6 +423,8 @@ else
 	"
 fi
 
+sleep 7 
+clear
 ###################################################################################################################
 
 echo '
@@ -440,6 +443,8 @@ echo "Privilege escalation description:
 echo "While ssh'd as User '$USERNAME', The following files will permit privilege escalation:"
 echo "  "$SUDOBLE
 
+sleep 7 
+clear
 printf '\n\n\n'
 echo '###################################################################################################################'
 
@@ -460,6 +465,6 @@ echo "
 searchsploit "LINUX KERNEL " $KVSE
 
 printf '\n\n\n'
-echo '###################################################################################################################'
+#echo '###################################################################################################################'
 
 ###################################################################################################################
