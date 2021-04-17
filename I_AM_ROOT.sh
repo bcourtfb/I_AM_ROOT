@@ -60,7 +60,6 @@ echo
 ###################################################################################################################
 #To create a directory for the script.
 #This command needs to stay in this location
-<<<<<<< HEAD
 
 HOME1=$(pwd)
 # We check that a working directory exists, if not we create one
@@ -83,14 +82,6 @@ echo
 ###################################################################################################################
 #MSG=""
 #while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG"
-=======
-HOME1=$(pwd)
-# We check that a working directory exists, if not we create one
-ls I_AM_ROOT 2>/dev/null
-if [ $? -gt 0 ]; then
-    mkdir $HOME1/I_AM_ROOT
-fi
->>>>>>> f6f9424e47558e4d985d8588e4418f7a4c88fc6e
 
 ###################################################################################################################
 #Checking for dependencies
@@ -400,11 +391,7 @@ echo
 echo
 
 sleep 5
-<<<<<<< HEAD
 sshpass -p "$PASSWD" scp "$USERNAME"@"$IP_ADDRESS":"$DIR"${F} "$DEST"
-=======
-sshpass -p "$PASSWD" scp -r "$USERNAME"@"$IP_ADDRESS":"$DIR" "$HOME1"
->>>>>>> f6f9424e47558e4d985d8588e4418f7a4c88fc6e
 sleep 5
 current_time=$(date "+%Y.%m.%d-%H.%M.%S")
 mv "$DEST"$F "$DEST""$IP_ADDRESS"-"$(date "+%Y.%m.%d-%H.%M.%S")"_.txt
