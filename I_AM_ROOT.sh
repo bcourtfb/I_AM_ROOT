@@ -63,19 +63,11 @@ echo
 
 HOME1=$(pwd)
 # We check that a working directory exists, if not we create one
-# ls I_AM_ROOT 2>/dev/null
-
-# if [ $? -gt 0 ]; then
 
 [ ! -d "$HOME1/I_AM_ROOT/" ] && mkdir $HOME1/I_AM_ROOT/ && MSG2="CREATING DIRECTORY.........." || MSG3="DIRECTORY ALREADY EXISTS.........."
       while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG2"
       while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG3"
 
-# else
-      
-
-
-# fi
 sleep 2
 echo
 echo
@@ -214,9 +206,6 @@ while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG11
 read -r IP_ADDRESS
 
 
-# ls I_AM_ROOT/$IP_ADDRESS 2>/dev/null
-
-# if [ $? -gt 0 ]; then
 [ ! -d "$HOME1/I_AM_ROOT/$IP_ADDRESS" ] && mkdir $HOME1/I_AM_ROOT/$IP_ADDRESS
       DEST=$HOME1/I_AM_ROOT/$IP_ADDRESS/
 
@@ -235,7 +224,7 @@ while ! validateIP "$IP_ADDRESS"
             while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG13"
             read -r IP_ADDRESS
 done
-# DEST=$(mkdir "$HOME"/"$IP_ADDRESS")
+
 echo
 MSG11="ENTER USERNAME: "
 while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG11"
@@ -244,12 +233,9 @@ echo
 MSG12="ENTER PASSWORD: "
 while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG12"
 
-# For the time being, we have chosen to use -s (silent mode) with the password input
 read -s PASSWD
 sleep 2
-# echo 
-# Show * when entering password
-#PASSWD=$(systemd-ask-password "${GREEN}ENTER PASSWORD: ${NOCOLOR}")
+
 echo
 echo
 
@@ -298,7 +284,7 @@ SND="send \"echo '' >> $DIR${F}\r\""
 # Function with expect commands to ssh into remote host and execute commands. 
 # It will attemp to gather info for possible privilge escalation
 
-MSG13="EXECUTING COMMANDS, PLEASE BE PATIENT.........." 
+MSG13="EXECUTING COMMANDS, NO FURTHER USER INPUT NECESSARY PLEASE BE PATIENT.........." 
 while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG13"
 echo
 echo
@@ -376,8 +362,9 @@ its_only_stealing_if_you_get_caught
 
 echo
 echo
-sleep 2
 clear
+sleep 2
+
 MSG14="COMMAND EXECUTION COMPLETE......." 
 while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG14"
 echo
@@ -385,6 +372,7 @@ echo
 
 ###################################################################################################################
 # Commands to transfer the information and delete DIR in remote host.
+
 MSG15="RETRIVING INFORMATION......."
 while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG15"
 echo
