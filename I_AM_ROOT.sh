@@ -227,13 +227,14 @@ validateIP
       DEST=$HOME1/I_AM_ROOT/$IP_ADDRESS/
 
       sleep 1
-
+      
   ###################################################################################################################
       # While loop to validate the IP provided, if ip is not valid then it will ask for a valid ip
       while ! validateIP "$IP_ADDRESS"
             do
+                  echo
                   MSG12="INVALID IP"
-                  while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG12"
+                  while read -rn1;do echo -ne "${RED}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG12"
                    sleep .1
                   echo
                   echo
@@ -474,7 +475,7 @@ echo
 sleep 7 
 ###################################################################################################################
 
-MSG17="The user '$USERNAME' can execute 'less' command as sudo"
+MSG17="The user $USERNAME can execute 'less' command as sudo"
       while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG17"
       sleep 1
       echo
