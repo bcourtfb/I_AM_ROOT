@@ -322,7 +322,7 @@ SND="send \"echo '' >> $DIR${F}\r\""
 # Function with expect commands to ssh into remote host and execute commands. 
 # It will attemp to gather info for possible privilge escalation
 
-MSG13="EXECUTING COMMANDS, NO FURTHER USER INPUT, NECESSARY PLEASE BE PATIENT.........." 
+MSG13="EXECUTING COMMANDS, NO FURTHER USER INPUT NECESSARY, PLEASE BE PATIENT.........." 
 while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG13"
 echo
 echo
@@ -547,7 +547,7 @@ do lynx -dump https://gtfobins.github.io/gtfobins/"$line"/ > ro.txt;
 wline=$(head -n 1 ro.txt)
 wline=${wline:0:3}
 
-DERPI="$DEST"result.txt
+DERPI="$DEST"result"-$(date "+%Y.%m.%d-%H.%M.%S")".txt
 
 touch $DERPI
 
