@@ -308,6 +308,7 @@ function progress(){
   }
 progress
 echo
+clear
 sleep 2
 ###################################################################################################################
 # Variables
@@ -324,8 +325,7 @@ MSG13="EXECUTING COMMANDS, NO FURTHER USER INPUT NECESSARY PLEASE BE PATIENT....
 while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG13"
 echo
 echo
-clear
-echo 
+
 sleep 2
 
 function get_info {
