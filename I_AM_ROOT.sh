@@ -322,7 +322,7 @@ SND="send \"echo '' >> $DIR${F}\r\""
 # Function with expect commands to ssh into remote host and execute commands. 
 # It will attemp to gather info for possible privilge escalation
 
-MSG13="EXECUTING COMMANDS, NO FURTHER USER INPUT NECESSARY PLEASE BE PATIENT.........." 
+MSG13="EXECUTING COMMANDS, NO FURTHER USER INPUT, NECESSARY PLEASE BE PATIENT.........." 
 while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG13"
 echo
 echo
@@ -415,7 +415,7 @@ echo
 ###################################################################################################################
 # Commands to transfer the information and delete DIR in remote host.
 
-MSG15="RETRIVING INFORMATION......."
+MSG15="RETRIEVING INFORMATION......."
 while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG15"
 echo
 echo
@@ -522,4 +522,52 @@ echo "
     "
 searchsploit "LINUX KERNEL " $KVSE
 
+sleep 7
 echo
+echo -e "${PURPLE}###########################################################################${NOCOLOR} 
+
+"
+
+###################################################################################################################
+
+# SUID Files exploit
+
+MSG19="Checking SUID files.........."$KVSE
+      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG19"
+      sleep 1
+      echo
+      echo
+
+sed -n '/SUID/,/@/p' "$Info" | grep -oE '/[^/ ]+$' | grep -Po '^.{1}\K.*' > data.txt
+
+while read line;
+
+do lynx -dump https://gtfobins.github.io/gtfobins/"$line"/ > ro.txt;
+
+wline=$(head -n 1 ro.txt)
+wline=${wline:0:3}
+
+DERPI="$DEST"result.txt
+
+touch $DERPI
+
+if [[ $wline -ne "404" ]]; then
+   less ro.txt >> $DERPI
+   echo ' ' >> $DERPI
+   echo ' ' >> $DERPI
+   echo '@##########@' >> $DERPI
+   echo ' ' >> $DERPI
+fi;
+
+done < data.txt
+
+rm ro.txt
+rm data.txt
+
+echo "
+        DEAR USER, INFORMATION ON THE EXPLOITAITION OF
+        ANY AVAILABLE SUID FILES CAN BE FOUND IN A
+        SEPARATE TEXT FILE LOCATED AT:
+  $DERPI
+     "
+
