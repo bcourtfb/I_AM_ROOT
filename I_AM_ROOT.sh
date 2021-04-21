@@ -547,8 +547,8 @@ do lynx -dump https://gtfobins.github.io/gtfobins/"$line"/ > ro.txt;
 wline=$(head -n 1 ro.txt)
 wline=${wline:0:3}
 
-DERPI="$DEST"result"-$(date "+%Y.%m.%d-%H.%M.%S")".txt
-
+REFI=result"-$(date "+%Y.%m.%d-%H.%M.%S")".txt
+DERPI="$DEST""$REFI"
 touch $DERPI
 
 if [[ $wline -ne "404" ]]; then
@@ -568,6 +568,6 @@ echo "
         DEAR USER, INFORMATION ON THE EXPLOITAITION OF
         ANY AVAILABLE SUID FILES CAN BE FOUND IN A
         SEPARATE TEXT FILE LOCATED AT:
-  $DERPI
+    ./I_AM_ROOT/$IP_ADDRESS/$REFI
      "
 
