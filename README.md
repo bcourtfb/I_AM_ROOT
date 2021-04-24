@@ -6,9 +6,6 @@ The goal of this tool is to help pentesters by having a program that will check 
 
 ![privi](https://user-images.githubusercontent.com/73208048/115969205-b4f51900-a4f0-11eb-97e5-cd58f1d46a04.jpg)
 
-
-
-
 # Required Dependencies 
 
 1. EXPECT
@@ -17,5 +14,22 @@ The goal of this tool is to help pentesters by having a program that will check 
 2. SSHPASS
     - A utility designed for running ssh using the mode referred to as "keyboard-in‐teractive" password authentication, but in non-interactive mode.
 
-3. PV
-    - Shows the progress of data through a pipeline by giving information such as time elapsed, percentage completed (with progress bar), current throughput rate, total data transferred, and ETA.
+3. SEARCHSPLOIT
+    - A command-line search tool that allow you to search through exploits and shellcodes using one or more terms from Exploit-DB.
+
+4. XTERM
+    - A terminal emulator for the X Window System that provides a command-line interface within a window.
+
+# Setup Instructions 
+1. Start a Linux VM that you own
+2. Login to the Linux VM using the corresponding login credentials
+3. Open the terminal in Linux VM
+4. Download the program by using the getclone command
+5. Once downloaded make sure you change permissions to allow you to execute the program
+6. Make sure you have the necessary depencies, please note if you do not have them the program will automatically download them on to your machine.
+7. Run the program with sudo
+8. Setup is now complete please read carefully the output of the script and follow the prompt
+
+
+
+
